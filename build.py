@@ -40,7 +40,7 @@ def _odds_for(group, rows):
     return out
 
 
-def tracker(group, today):
+def tracker(group, today, record=True):
     """The Big 4 view: where my team sits against the playoff cut line."""
     unit = group["unit"]
     div_rows = fetch.rows(group["path"], level=3)
@@ -48,7 +48,11 @@ def tracker(group, today):
     if not lad_rows:
         return []
     odds_table = _odds_for(group, lad_rows)
-    if odds_table:
+    # Only a league that is actually being played gets written to history.
+    # Without this guard a --all test run banks preseason and finished-season
+    # numbers, which then surface as the "a week ago" baseline once the real
+    # season starts.
+    if odds_table and record:
         history.record(group["key"], odds_table, today)
 
     cards = []
@@ -187,7 +191,7 @@ def build_all(today=None, include_offseason=False):
                     group["path"], today)):
                 continue
             if tab["mode"] == "tracker":
-                payload["cards"].extend(tracker(group, today))
+                payload["cards"].extend(tracker(group, today, record=live))
             else:
                 built = table(group, today)
                 if built:
