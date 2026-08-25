@@ -292,7 +292,8 @@ def table_block(t):
             "mine" if r["mine"] else "", tint(r["team"]), name, cells))
     # Say so when the numbers are computed rather than published.
     note = ('<div class="sub">computed from game results &mdash; ESPN publishes '
-            'no college hockey standings</div>') if t.get("derived") else ""
+            "no college hockey standings. Rank shown is the NCAA&rsquo;s NPI, "
+            'which decides tournament selection.</div>') if t.get("derived") else ""
     return ('<div class="card"><div class="who">%s</div>%s<table>%s%s</table></div>'
             % (esc(t["label"]), note, cols, "".join(body)))
 

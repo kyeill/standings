@@ -35,6 +35,70 @@ MONTH_CACHE = 60 * 24 * 7      # a finished month never changes
 LIVE_CACHE = 60 * 3
 
 
+NPI = "https://ncaa-api.henrygd.me/rankings/icehockey-men/d1"
+
+# The NCAA writes school names its own way ("Michigan St.", "Alas. Fairbanks").
+# Expanding the common abbreviations gets 55 of 63 teams; the rest need saying
+# out loud. Matching is EXACT after normalising -- a substring match would give
+# Michigan State and Michigan Tech both Michigan's ranking.
+_ABBR = {"st": "state", "mich": "michigan", "minn": "minnesota",
+         "neb": "nebraska", "conn": "connecticut", "mass": "massachusetts",
+         "colo": "colorado", "wis": "wisconsin", "ill": "illinois",
+         "ind": "indiana", "fla": "florida", "ala": "alabama",
+         "ariz": "arizona", "calif": "california", "penn": "pennsylvania",
+         "n": "north", "s": "south", "w": "west", "e": "east"}
+
+_ALIASES = {
+    "army": "army west point",
+    "augustana university": "augustana",
+    "saint thomas minnesota": "saint thomas",
+    "boston university": "boston u",
+    "alaska anchorage": "alas anchorage",
+    "alaska": "alas fairbanks",
+    "long island university": "liu",
+    "colorado college": "colorado col",
+}
+
+
+def _norm(text):
+    """Fold a school name to a comparable form.
+
+    "St." is Saint when it leads and State when it does not, which is why
+    St. Lawrence and Minnesota St. cannot share one rule.
+    """
+    import re
+    lowered = re.sub(r"\(.*?\)", " ", (text or "").lower())
+    words, out = re.split(r"[\s.]+", lowered), []
+    for i, word in enumerate(words):
+        word = re.sub(r"[^a-z]", "", word)
+        if not word:
+            continue
+        if word == "st":
+            out.append("saint" if i == 0 else "state")
+        else:
+            out.append(_ABBR.get(word, word))
+    key = " ".join(out)
+    return _ALIASES.get(key, key)
+
+
+def npi_ranks():
+    """{normalised school: rank} from the NCAA's NPI, or {}.
+
+    NPI is what actually decides at-large selection for the NCAA tournament,
+    so it is the closest thing college hockey has to a playoff-odds number.
+    Served by a community mirror of ncaa.com rather than a first-party feed --
+    if it disappears the tables simply lose their rank column.
+    """
+    data = fetch.get(NPI, key="npi-icehockey", max_age_min=60 * 12)
+    out = {}
+    for row in (data or {}).get("data") or []:
+        try:
+            out[_norm(row.get("School"))] = int(row.get("Rank"))
+        except (TypeError, ValueError):
+            continue
+    return out
+
+
 def season_year(today=None):
     """The year a season STARTED. October 2026 and March 2027 are both 2026.
 
@@ -133,6 +197,7 @@ def standings(today=None):
                 if same:
                     conf_rec[tid][slot] += 1
 
+    ranks = npi_ranks()
     rows = []
     for tid, conference in conf_of.items():
         team = meta.get(tid)
@@ -143,6 +208,8 @@ def standings(today=None):
             "conference": conference, "division": conference,
             "team": team.get("displayName") or "", "abbr": team.get("abbreviation") or "",
             "id": tid, "logo": team.get("logo") or "",
+            "location": team.get("location") or "",
+            "npi": ranks.get(_norm(team.get("location") or team.get("displayName"))),
             "stats": {
                 "vs. Conf.": "%d-%d-%d" % tuple(c),
                 "overall": "%d-%d-%d" % tuple(a),

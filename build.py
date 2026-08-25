@@ -145,7 +145,10 @@ def table(group, today):
     for r in pool:
         row = model._row(r, me, unit, basis, pool[0])
         row["mine"] = any(m in r["team"].lower() for m in mine)
-        row["poll"] = (poll_rank.get(str(r.get("id") or "")) or {}).get("rank")
+        # college hockey ranks by NPI, the NCAA's own selection metric;
+        # the other college sports rank by poll
+        row["poll"] = (r.get("npi") if group.get("derived")
+                       else (poll_rank.get(str(r.get("id") or "")) or {}).get("rank"))
         out_rows.append(row)
 
     # Before a college season starts every conference record is 0-0, so the

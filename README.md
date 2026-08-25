@@ -66,7 +66,8 @@ football today). **Preseason counts as off** -- without that the NFL shows
 | MLB | ESPN standings | `playoffPercent`, right in the payload |
 | NHL | Hockey-Reference | scraped; see below |
 | College football | ESPN FPI | means CFP odds; empty in the preseason |
-| Everything else | none exists | college basketball, college hockey, soccer |
+| College hockey | NCAA NPI rank | not odds, but the metric that decides selection |
+| Everything else | none exists | college basketball, soccer |
 
 MoneyPuck, the obvious NHL source, explicitly asks not to be scraped, so it is
 not used. Hockey-Reference's `/friv/playoff_prob.cgi` is not disallowed by
@@ -86,5 +87,7 @@ number of days it has been running. It started 2026-08-25.
 
 * College hockey conference POINTS are not derived, only W-L-T -- the leagues
   weight overtime differently and change the rules between seasons.
+* The NPI rank comes from a community mirror of ncaa.com, not a first-party
+  feed. If it goes away the hockey tables just lose their rank column.
 * College basketball and soccer have no odds source at all.
 * The college football spread of FPI odds is unverified until the season starts.
