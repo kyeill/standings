@@ -95,6 +95,35 @@ footer{margin-top:34px;color:var(--muted);font-size:12px;
   td,th{font-size:12.5px}
   .big{font-size:24px}
 }
+/* Desktop only. Everything above is the phone layout, which is already right,
+   so this scales UP from 641px rather than touching the base rules. Sizes
+   match the Games page: an 860px column and a 26px heading. */
+@media (min-width:641px){
+  body{font-size:16px;line-height:1.5}
+  .wrap{max-width:860px;padding:0 16px 80px}
+  header{padding:24px 0 12px}
+  h1{font-size:26px;letter-spacing:-0.01em}
+  h1 span{font-size:14px}
+  nav{margin:0 -16px;padding:0 10px}
+  nav button{font-size:15px;padding:12px 15px}
+  section{padding-top:18px}
+  .card{padding:15px 17px;margin:13px 0;border-radius:11px}
+  .who{font-size:19px;gap:10px}
+  .who img{width:25px;height:25px}
+  .sub{font-size:14px}
+  .big{font-size:32px}
+  .gapline{font-size:14.5px}
+  .delta{font-size:14px}
+  table{margin-top:13px}
+  th{font-size:11.5px}
+  td{font-size:15px;padding:6px 0}
+  .logo{width:19px;height:19px;margin-right:8px}
+  .rk{font-size:12.5px}
+  tr.cut td{font-size:11.5px}
+  tr.skip td{font-size:13px}
+  .note{font-size:14px;padding:11px 13px}
+  footer{font-size:13px}
+}
 """
 
 SW = """
