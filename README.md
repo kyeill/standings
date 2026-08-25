@@ -10,6 +10,7 @@ python site.py           build the app into output/site/  (in-season sports only
 python site.py --all     same, but keep every sport, for testing
 python build.py          print what each tab resolved to, no HTML
 python mock.py           the three original design mockups
+python selftest.py       check the back end (38 assertions)
 ```
 
 Python is not on PATH:
@@ -82,6 +83,24 @@ ever feels wrong, delete the source and the NHL simply loses its odds column.
 reading closest to a week ago. **This cannot be backfilled** -- no source
 publishes yesterday's number -- so the feature is worth exactly as much as the
 number of days it has been running. It started 2026-08-25.
+
+## Deployment
+
+Live at <https://kyeill.github.io/standings/>, built by GitHub Actions at
+06:00 Eastern with catch-up slots at 07 and 08 because GitHub delays scheduled
+runs. The gate reads `output/history/_last_build.txt`; when a catch-up finds
+the day already built, the build job skips AND so does deploy -- the deploy job
+is gated on `needs.build.outputs.built`, without which it fails every morning
+on "No artifacts named github-pages".
+
+Two traps worth remembering, both cost time here:
+
+* **A workflow registers only when a push MODIFIES its file.** A workflow that
+  arrives in the push that first creates the repo is never scanned: the file is
+  visible, but Actions lists no workflow and `gh workflow run` reports "not
+  found on the default branch". Touch the file and push again.
+* Reading the Pages API anonymously returns 404 even when Pages is enabled, so
+  it is not a usable check.
 
 ## Known gaps
 
