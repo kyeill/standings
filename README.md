@@ -84,8 +84,7 @@ number of days it has been running. It started 2026-08-25.
 
 ## Known gaps
 
-* **College hockey has no standings anywhere in ESPN** -- site API and core API
-  both return zero entries for every conference. Deriving conference records
-  from game results is the fallback, and is not built yet.
+* College hockey conference POINTS are not derived, only W-L-T -- the leagues
+  weight overtime differently and change the rules between seasons.
 * College basketball and soccer have no odds source at all.
 * The college football spread of FPI odds is unverified until the season starts.

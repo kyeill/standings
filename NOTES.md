@@ -20,7 +20,7 @@ python model.py    -> a one-line summary per tracked team, for sanity checks
 | NHL | yes, division of 8 | yes, 8 seeds, **points** | **no** |
 | College football | conference table only | no | FPI, **in season only** |
 | College basketball | conference table only | no | no |
-| College hockey | **nothing at all** | no | no |
+| College hockey | **derived from games** | no | no |
 | Premier League | yes, one table of 20 | the line is a choice | no |
 | MLS | yes, conference of 15 | yes, top 9 | no |
 
@@ -45,10 +45,26 @@ column contradicts the order it sits in. Both must use the same basis.
 Away, vs Division, vs Conf., vs AP Top 25. A plain dict comprehension keeps the
 LAST occurrence, which is a split, not the overall figure. Take the first.
 
-**College hockey standings are empty.** Every conference node returns zero
-entries. PairWise, the ranking that actually decides the NCAA tournament, has
-no free API. Michigan and Cornell hockey can have a page presence but not a
-table.
+**College hockey standings are empty everywhere in ESPN** -- site API and core
+API both return zero entries for every conference. They are now DERIVED in
+`chockey.py` from completed game results, which was validated against the
+finished 2025-26 season (a correct 12-team ECAC and 7-team Big Ten table).
+Two traps in doing so: the college hockey scoreboard carries **no
+conferenceId at all**, so membership has to come from the core API's group
+listing; and **ESPN calls the ECAC "East Coast Athletic Conference"**, so a
+name filter on "ECAC" silently matches nothing.
+
+Conference POINTS are deliberately not derived -- the leagues weight overtime
+results differently and change the rules between seasons, so a points column
+would be invented rather than computed.
+
+Sources ruled out for college hockey, all checked 2026-08-25: NCAA's data host
+404s on every standings path tried; USCHO renders client side; College Hockey
+News has no machine-readable standings page. The NCAA's **NPI** ranking (which
+now decides tournament selection) IS reachable through a community proxy at
+`ncaa-api.henrygd.me/rankings/icehockey-men/d1` -- Cornell showed there at #11,
+22-10-1 -- but it is a third-party mirror, not a first-party feed, so it is not
+used.
 
 **ESPN's `playoffSeed` is not a table position.** MLB seeds 1-3 are division
 winners, so a 66-66 division leader is seed 3 while a 72-59 wild card is seed 5.
