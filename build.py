@@ -206,6 +206,24 @@ def rows_for(pool, me, unit, tracked, leader=None):
     return out
 
 
+def _extra_column(group, pool):
+    """(spec, {team: value}) for an optional per-team column.
+
+    Keyed on ESPN's displayName and matched EXACTLY -- the power index and the
+    standings both use it, and anything looser hands Michigan State the
+    Wolverines' number.
+    """
+    spec = group.get("column")
+    if not spec:
+        return None, {}
+    if spec["source"] == "npi":
+        return spec, {r["team"]: r.get("npi") for r in pool}
+    if spec["source"] == "powerindex":
+        table = fetch.power_index(spec["path"], spec["key"])
+        return spec, {name: vals.get(spec["field"]) for name, vals in table.items()}
+    return None, {}
+
+
 def table(group, today):
     """The college and soccer view: a straight standings table."""
     unit = group["unit"]
@@ -228,13 +246,16 @@ def table(group, today):
     if group.get("poll"):
         poll_rank = fetch.poll(group["path"], group["poll"])
 
+    spec, extra = _extra_column(group, pool)
+
     out_rows = []
     for r in pool:
         row = model._row(r, me, unit, basis, pool[0])
+        row["extra"] = extra.get(r["team"])
         row["mine"] = any(m in r["team"].lower() for m in mine)
-        # college hockey ranks by NPI, the NCAA's own selection metric;
-        # the other college sports rank by poll
-        row["poll"] = (r.get("npi") if group.get("derived")
+        # The rank chip: college hockey has no poll, so it is left to the NPI
+        # column instead of duplicating the number beside the name.
+        row["poll"] = (None if group.get("derived")
                        else (poll_rank.get(str(r.get("id") or "")) or {}).get("rank"))
         out_rows.append(row)
 
@@ -255,6 +276,7 @@ def table(group, today):
         "label": group["label"], "name": me["conference"] or group["label"],
         "unit": unit, "basis": basis, "line": group.get("line"),
         "odds": tab_odds,
+        "column": spec,
         "derived": bool(group.get("derived")),
         "line_label": group.get("line_label"), "rows": out_rows,
         "extra_teams": others,

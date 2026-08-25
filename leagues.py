@@ -30,7 +30,10 @@ TABS = [
              "basis": "conference", "unit": GAMES, "poll": "ap",
              # ESPN's FPI carries probmakeplayoffs for college football, which
              # there means the CFP.
-             "odds": "cfb", "odds_label": "to make the CFP"},
+             "odds": "cfb", "odds_label": "to make the CFP",
+             "column": {"source": "powerindex", "path": "football/college-football",
+                        "key": "cfb", "field": "probmakeplayoffs",
+                        "label": "CFP", "fmt": "pct"}},
             # Cornell is Ivy, which is FCS -- a different feed entirely.
             {"key": "cfb-fcs", "path": "football/college-football", "group": 81,
              "label": "Ivy League", "teams": [CORNELL],
@@ -42,7 +45,13 @@ TABS = [
         "groups": [
             {"key": "cbb", "path": "basketball/mens-college-basketball",
              "label": "Big Ten", "teams": [MICHIGAN],
-             "basis": "conference", "unit": GAMES, "poll": "ap"},
+             "basis": "conference", "unit": GAMES, "poll": "ap",
+             # BPI has no "chance to make the tournament", but it does project
+             # a seed, which is the bracketology answer.
+             "column": {"source": "powerindex",
+                        "path": "basketball/mens-college-basketball", "key": "cbb",
+                        "field": "projectedtournamentseed",
+                        "label": "Seed", "fmt": "int"}},
             {"key": "cbb-ivy", "path": "basketball/mens-college-basketball",
              "label": "Ivy League", "teams": [CORNELL],
              "basis": "conference", "unit": GAMES, "poll": "ap"},
@@ -55,10 +64,12 @@ TABS = [
         "groups": [
             {"key": "chockey-b10", "path": "hockey/mens-college-hockey",
              "label": "Big Ten", "teams": [MICHIGAN],
-             "basis": "conference", "unit": GAMES, "derived": True},
+             "basis": "conference", "unit": GAMES, "derived": True,
+             "column": {"source": "npi", "label": "NPI", "fmt": "int"}},
             {"key": "chockey-ecac", "path": "hockey/mens-college-hockey",
              "label": "ECAC", "teams": [CORNELL],
-             "basis": "conference", "unit": GAMES, "derived": True},
+             "basis": "conference", "unit": GAMES, "derived": True,
+             "column": {"source": "npi", "label": "NPI", "fmt": "int"}},
         ],
     },
     {

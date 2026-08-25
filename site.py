@@ -70,8 +70,13 @@ section.on{display:block}
 .delta{font-size:13px;color:var(--muted)}
 .delta.up{color:var(--good)} .delta.down{color:var(--bad)}
 .gapline{color:var(--muted);font-size:13.5px}
+/* Fixed layout so the numeric columns land in the SAME place on every tab.
+   With auto layout the team column ranged from 436px to 545px and the numbers
+   jumped sideways as you swiped between sports. */
 table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;
-      margin-top:11px}
+      margin-top:11px;table-layout:fixed}
+th:not(:first-child),td:not(:first-child){width:58px}
+td:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 th{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;
    color:var(--muted);font-weight:600;text-align:right;padding:0 0 5px}
 th:first-child{text-align:left}
@@ -80,8 +85,7 @@ td:first-child{text-align:left}
 tr.mine td{background:rgba(255,255,255,.05);font-weight:600}
 tr.mine td:first-child{box-shadow:inset 3px 0 0 var(--tint,var(--accent))}
 tr.mine td:first-child .nm{padding-left:7px}
-tr.cut td{border-top:1px dashed var(--cut);color:var(--cut);font-size:10.5px;
-          text-transform:uppercase;letter-spacing:.07em;padding:3px 0 2px}
+tr.belowcut td{border-top:2px dashed var(--cut)}
 tr.skip td{color:var(--muted);font-size:12px;padding:2px 0}
 .logo{width:16px;height:16px;vertical-align:middle;margin-right:6px}
 .nm{vertical-align:middle}
@@ -117,9 +121,9 @@ footer{margin-top:34px;color:var(--muted);font-size:12px;
   table{margin-top:13px}
   th{font-size:11.5px}
   td{font-size:15px;padding:6px 0}
+  th:not(:first-child),td:not(:first-child){width:82px}
   .logo{width:19px;height:19px;margin-right:8px}
   .rk{font-size:12.5px}
-  tr.cut td{font-size:11.5px}
   tr.skip td{font-size:13px}
   .note{font-size:14px;padding:11px 13px}
   footer{font-size:13px}
@@ -301,13 +305,14 @@ def section_table(sec, card):
     # Every team, every table -- his call. Longer, but nothing is hidden.
     body = []
     for i in range(len(rows)):
-        if cut and i == cut:
-            body.append('<tr class="cut"><td colspan="4">%s cut line</td></tr>'
-                        % esc(sec["cut_label"] or "playoff"))
         r = rows[i]
+        # The first row below the line carries the line itself, so there is no
+        # caption row taking up a whole row's height to say what is obvious.
+        klass = " ".join(x for x in ["mine" if r["mine"] else "",
+                                     "belowcut" if cut and i == cut else ""] if x)
         body.append('<tr class="%s" style="--tint:#%s"><td>%s<span class="nm">%s</span>'
                     '</td><td class="muted">%s</td><td>%s</td><td>%s</td></tr>' % (
-                        "mine" if r["mine"] else "", tint(r["team"]),
+                        klass, tint(r["team"]),
                         crest(r["logo"]), esc(name_of(r)), i + 1,
                         esc(record_of(r, unit)), behind(r["gb"], unit)))
     # Only the conference ladder is a real seeding; the numbers beside a
@@ -338,32 +343,36 @@ def record_of(row, unit):
 
 def table_block(t):
     unit, college = t["unit"], t["basis"] == "conference"
+    spec = t.get("column")
+    extra_head = "<th>%s</th>" % esc(spec["label"]) if spec else ""
     if college:
-        cols = "<tr><th>Team</th><th>Conf</th><th>Overall</th><th>GB</th></tr>"
+        cols = ("<tr><th>Team</th>%s<th>Conf</th><th>Overall</th><th>GB</th></tr>"
+                % extra_head)
     else:
-        cols = "<tr><th>Team</th><th>P</th><th>W-D-L</th><th>GD</th><th>Pts</th></tr>"
+        cols = ("<tr><th>Team</th>%s<th>P</th><th>W-D-L</th><th>GD</th>"
+                "<th>Pts</th></tr>" % extra_head)
     body = []
     for i, r in enumerate(t["rows"]):
-        if t["line"] and i == t["line"]:
-            span = 4 if college else 5
-            body.append('<tr class="cut"><td colspan="%d">%s line</td></tr>'
-                        % (span, esc(t["line_label"] or "cut")))
         rank = ('<span class="rk">%s</span>' % r["poll"]) if r.get("poll") else ""
         name = '%s%s<span class="nm">%s</span>' % (crest(r["logo"]), rank,
                                                    esc(name_of(r, plain=college)))
+        cell = "<td>%s</td>" % extra_value(r.get("extra"), spec) if spec else ""
         if college:
             # college hockey has ties, so print the record string as given
             # rather than rebuilding it from wins and losses alone
             conf = r.get("conf_record") or "%s-%s" % (r["wins"], r["losses"])
-            cells = '<td>%s</td><td class="muted">%s</td><td>%s</td>' % (
-                esc(conf), esc(r["record"]), behind(r["gb"], unit))
+            cells = '%s<td>%s</td><td class="muted">%s</td><td>%s</td>' % (
+                cell, esc(conf), esc(r["record"]), behind(r["gb"], unit))
         else:
-            cells = ('<td class="muted">%s</td><td class="muted">%s</td>'
+            cells = (cell + '<td class="muted">%s</td><td class="muted">%s</td>'
                      '<td class="muted">%s</td><td>%s</td>' % (
                          r["gp"] if r["gp"] is not None else "-",
                          esc(r["record"]), goal_diff(r), r["points"]))
+        klass = " ".join(x for x in ["mine" if r["mine"] else "",
+                                     "belowcut" if t["line"] and i == t["line"] else ""]
+                         if x)
         body.append('<tr class="%s" style="--tint:#%s"><td>%s</td>%s</tr>' % (
-            "mine" if r["mine"] else "", tint(r["team"]), name, cells))
+            klass, tint(r["team"]), name, cells))
     # Say so when the numbers are computed rather than published.
     odds_line = ""
     if t.get("odds"):
@@ -375,6 +384,17 @@ def table_block(t):
             'which decides tournament selection.</div>') if t.get("derived") else ""
     return ('<div class="card"><div class="who">%s</div>%s%s<table>%s%s</table></div>'
             % (esc(t["label"]), odds_line, note, cols, "".join(body)))
+
+
+def extra_value(value, spec):
+    """A percentage, a seed, or a rank -- blank when the source has no figure
+    for that team (the BPI only covers 50 teams, so most of a conference is
+    legitimately empty)."""
+    if value is None:
+        return '<span class="muted">-</span>'
+    if spec.get("fmt") == "pct":
+        return "%.0f%%" % value
+    return "%d" % round(value)
 
 
 def short_team(name):
