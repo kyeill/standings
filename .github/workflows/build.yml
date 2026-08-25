@@ -1,5 +1,7 @@
 name: Build standings
 
+# Publishes the standings app to Pages each morning.
+
 on:
   schedule:
     # Three slots, because GitHub delays scheduled runs -- sports-daily saw a
