@@ -24,6 +24,11 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Tells the deploy job whether anything was actually produced. Without it
+    # the catch-up slots skip the build, upload no artifact, and deploy fails
+    # every morning on "No artifacts named github-pages".
+    outputs:
+      built: ${{ steps.gate.outputs.run }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -62,6 +67,7 @@ jobs:
 
   deploy:
     needs: build
+    if: needs.build.outputs.built == 'yes'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
