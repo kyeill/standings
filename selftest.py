@@ -153,6 +153,21 @@ check("Europe sits on the EPL tab",
       [g["key"] for g in leagues.TABS[3]["groups"]],
       ["epl", "ucl", "uel", "uecl"])
 
+print("\nper-team columns  [LIVE]")
+for key, label in (("cfb", "CFP"), ("cbb", "Seed"), ("hky", "NPI")):
+    tab = next(t for t in leagues.TABS if t["key"] == key)
+    built = build.table(tab["groups"][0], datetime.date.today())
+    check("%s carries a %s column" % (key.upper(), label),
+          built["column"]["label"], label)
+    check("%s column has values" % key.upper(),
+          sum(1 for r in built["rows"] if r["extra"] is not None) > 0, True)
+# The BPI ranks only 50 teams nationally, so most of a conference is
+# legitimately blank -- that must not be mistaken for a failure.
+cbb = build.table(next(t for t in leagues.TABS if t["key"] == "cbb")["groups"][0],
+                  datetime.date.today())
+check("a team outside the BPI top 50 is blank, not zero",
+      any(r["extra"] is None for r in cbb["rows"]), True)
+
 print("\nend to end  [LIVE]")
 data = build.build_all(include_offseason=False)
 live = sorted(t["label"] for t in data["tabs"] if t["live"])
