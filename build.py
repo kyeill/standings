@@ -174,10 +174,15 @@ def _sections(group, me, div_rows, pool, unit):
                 gap = (-abs(model.gap(other["stats"], me["stats"], unit) or 0)
                        if at < spots
                        else model.gap(me["stats"], other["stats"], unit))
+            # Games behind the LAST wild-card spot, which is the number that
+            # answers "am I in". Teams above the line come out negative and
+            # render with a plus.
+            line = chase[spots - 1] if len(chase) >= spots else None
             out.append({
                 "kind": "wildcard", "label": "Wild card race", "cut": spots,
                 "cut_label": group["spots_label"], "gap": gap,
-                "rows": rows_for(chase, me, unit, tracked),
+                "from_cut": True,
+                "rows": rows_for(chase, me, unit, tracked, leader=line),
             })
         else:
             out.append({
@@ -188,11 +193,14 @@ def _sections(group, me, div_rows, pool, unit):
     return out
 
 
-def rows_for(pool, me, unit, tracked):
+def rows_for(pool, me, unit, tracked, leader=None):
+    """leader defaults to the top of the field; a wild-card table passes the
+    team holding the LAST spot instead, so the column reads as distance from
+    the cut line rather than from a leader nobody is racing."""
     names = [t.lower() for t in tracked]
     out = []
     for p in pool:
-        row = model._row(p, me, unit, "overall", pool[0])
+        row = model._row(p, me, unit, "overall", leader or pool[0])
         row["mine"] = any(n in p["team"].lower() for n in names)
         out.append(row)
     return out
@@ -237,9 +245,16 @@ def table(group, today):
         out_rows.sort(key=lambda r: (r["poll"] or 999, r["team"]))
     for i, row in enumerate(out_rows):
         row["rank"] = i + 1
+    tab_odds = None
+    if group.get("odds"):
+        pct = odds_src.lookup(odds_src.for_league(group["odds"]), group["teams"][0])
+        if pct is not None:
+            tab_odds = {"team": group["teams"][0], "pct": pct,
+                        "label": group.get("odds_label") or "to make the playoffs"}
     return {
         "label": group["label"], "name": me["conference"] or group["label"],
         "unit": unit, "basis": basis, "line": group.get("line"),
+        "odds": tab_odds,
         "derived": bool(group.get("derived")),
         "line_label": group.get("line_label"), "rows": out_rows,
         "extra_teams": others,

@@ -183,6 +183,12 @@ check("the division leader is absent from the wild-card race",
       top in {r["team"] for r in wc["rows"]}, False)
 check("the wild-card field is smaller than the league",
       len(wc["rows"]) < 15, True)
+# The wild-card column is measured from the LAST spot, so the team holding it
+# reads zero and everyone above it is negative.
+check("the team on the cut line is the reference",
+      abs(wc["rows"][wc["cut"] - 1]["gb"] or 0) < 0.01, True)
+check("teams above the line are ahead of it", wc["rows"][0]["gb"] < 0, True)
+check("teams below the line are behind it", wc["rows"][wc["cut"]]["gb"] > 0, True)
 nba = next(t for t in leagues.TABS if t["key"] == "nba")
 check("NBA is configured for one conference table",
       nba["groups"][0]["sections"], ["conference"])

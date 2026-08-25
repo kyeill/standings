@@ -211,8 +211,13 @@ def fmt(value, unit):
 
 
 def behind(value, unit):
+    """Distance from whatever the table measures against. Positive is behind;
+    negative means ahead, which only happens in a wild-card table measured
+    from the cut line, and reads as "+2.5"."""
     if value is None or abs(value) < 0.01:
         return '<span class="muted">-</span>'
+    if value < 0:
+        return '<span class="good">+%s</span>' % fmt(value, unit)
     return fmt(value, unit)
 
 
@@ -293,17 +298,9 @@ def section_table(sec, card):
     """One table inside a tracker card: division, wild card, or conference."""
     unit = card["unit"]
     rows, cut = sec["rows"], sec["cut"]
-    mine_at = next((i for i, r in enumerate(rows) if r["mine"]), 0)
-    # A division is four or five teams -- show all of them. A conference or a
-    # wild-card field is a dozen or more, so collapse everything that is not
-    # next to a decision.
-    idx = (range(len(rows)) if sec["kind"] == "division"
-           else window_rows(len(rows), cut or len(rows), mine_at))
-    body, last = [], None
-    for i in idx:
-        if last is not None and i > last + 1:
-            body.append('<tr class="skip"><td colspan="4">%d more</td></tr>'
-                        % (i - last - 1))
+    # Every team, every table -- his call. Longer, but nothing is hidden.
+    body = []
+    for i in range(len(rows)):
         if cut and i == cut:
             body.append('<tr class="cut"><td colspan="4">%s cut line</td></tr>'
                         % esc(sec["cut_label"] or "playoff"))
@@ -313,12 +310,12 @@ def section_table(sec, card):
                         "mine" if r["mine"] else "", tint(r["team"]),
                         crest(r["logo"]), esc(name_of(r)), i + 1,
                         esc(record_of(r, unit)), behind(r["gb"], unit)))
-        last = i
     # Only the conference ladder is a real seeding; the numbers beside a
     # division or a wild-card field are just positions within that field.
     head = "Seed" if sec["kind"] == "conference" else "Pos"
-    return ('<table><tr><th>%s</th><th>%s</th><th>Record</th><th>GB</th></tr>%s</table>'
-            % (esc(sec["label"]), head, "".join(body)))
+    gap_head = "vs line" if sec.get("from_cut") else "GB"
+    return ('<table><tr><th>%s</th><th>%s</th><th>Record</th><th>%s</th></tr>%s</table>'
+            % (esc(sec["label"]), head, gap_head, "".join(body)))
 
 
 def name_of(row, plain=False):
@@ -368,11 +365,24 @@ def table_block(t):
         body.append('<tr class="%s" style="--tint:#%s"><td>%s</td>%s</tr>' % (
             "mine" if r["mine"] else "", tint(r["team"]), name, cells))
     # Say so when the numbers are computed rather than published.
+    odds_line = ""
+    if t.get("odds"):
+        odds_line = ('<div class="sub">%s &mdash; <b>%.0f%%</b> %s</div>'
+                     % (esc(short_team(t["odds"]["team"])), t["odds"]["pct"],
+                        esc(t["odds"]["label"])))
     note = ('<div class="sub">computed from game results &mdash; ESPN publishes '
             "no college hockey standings. Rank shown is the NCAA&rsquo;s NPI, "
             'which decides tournament selection.</div>') if t.get("derived") else ""
-    return ('<div class="card"><div class="who">%s</div>%s<table>%s%s</table></div>'
-            % (esc(t["label"]), note, cols, "".join(body)))
+    return ('<div class="card"><div class="who">%s</div>%s%s<table>%s%s</table></div>'
+            % (esc(t["label"]), odds_line, note, cols, "".join(body)))
+
+
+def short_team(name):
+    """Config names carry the mascot; a sentence reads better without it."""
+    for tail in (" Wolverines", " Big Red", " Hotspur", " United"):
+        if name.endswith(tail):
+            return name[: -len(tail)]
+    return name
 
 
 def goal_diff(row):

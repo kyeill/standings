@@ -136,27 +136,32 @@ def rows(league_path, level=2, group=None, max_age_min=180):
 
 
 def power_index(league_path, key):
-    """{team displayName: {projection name: value}} or {}."""
+    """{team displayName: {field: value}} across EVERY category, or {}.
+
+    The category holding the projections is named differently per sport: the
+    NFL and NBA call it "projections", college football calls it "fpi", and
+    college basketball splits its numbers across "bpi", "resume" and
+    "tournament". Reading only "projections" silently returned nothing for
+    both college sports, which is why they looked like they had no odds.
+    """
     data = get(POWERINDEX % league_path, key="odds-%s" % key, max_age_min=60 * 12)
     if not data:
         return {}
-    names = []
-    for cat in data.get("categories") or []:
-        if cat.get("name") == "projections":
-            names = cat.get("names") or []
-            break
-    if not names:
+    names_by_cat = {c.get("name"): c.get("names") or []
+                    for c in data.get("categories") or []}
+    if not names_by_cat:
         return {}
     out = {}
     for entry in data.get("teams") or []:
         team = entry.get("team") or {}
+        merged = {}
         for cat in entry.get("categories") or []:
-            if cat.get("name") != "projections":
-                continue
-            values = cat.get("values") or []
-            out[team.get("displayName") or ""] = {
-                n: v for n, v in zip(names, values)
-            }
+            names = names_by_cat.get(cat.get("name")) or []
+            for name, value in zip(names, cat.get("values") or []):
+                if value is not None:
+                    merged.setdefault(name, value)
+        if merged:
+            out[team.get("displayName") or ""] = merged
     return out
 
 

@@ -27,7 +27,10 @@ TABS = [
         "groups": [
             {"key": "cfb", "path": "football/college-football", "group": 80,
              "label": "Big Ten", "teams": [MICHIGAN],
-             "basis": "conference", "unit": GAMES, "poll": "ap"},
+             "basis": "conference", "unit": GAMES, "poll": "ap",
+             # ESPN's FPI carries probmakeplayoffs for college football, which
+             # there means the CFP.
+             "odds": "cfb", "odds_label": "to make the CFP"},
             # Cornell is Ivy, which is FCS -- a different feed entirely.
             {"key": "cfb-fcs", "path": "football/college-football", "group": 81,
              "label": "Ivy League", "teams": [CORNELL],
