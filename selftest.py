@@ -140,10 +140,23 @@ check("lookup matches the other direction",
 check("lookup returns nothing for an unknown team",
       odds.lookup({"tigers": 3.2}, "Arsenal"), None)
 
+print("\ntab order")
+import leagues
+check("tabs are in the order he asked for",
+      [t["label"] for t in leagues.TABS],
+      ["CFB", "CBB", "HKY", "EPL", "NFL", "MLB", "NBA", "NHL", "MLS"])
+check("college splits by sport, both schools on each tab",
+      [g["label"] for g in leagues.TABS[0]["groups"]], ["Big Ten", "Ivy League"])
+check("HKY is COLLEGE hockey, and derived",
+      all(g.get("derived") for g in leagues.TABS[2]["groups"]), True)
+check("Europe sits on the EPL tab",
+      [g["key"] for g in leagues.TABS[3]["groups"]],
+      ["epl", "ucl", "uel", "uecl"])
+
 print("\nend to end  [LIVE]")
 data = build.build_all(include_offseason=False)
 live = sorted(t["label"] for t in data["tabs"] if t["live"])
-check("only in-season tabs are live", live, ["Atlanta", "College", "MLB", "Tottenham"])
+check("only in-season tabs are live", live, ["CFB", "EPL", "MLB", "MLS"])
 shown = [t for t in data["tabs"] if t["cards"] or t["tables"]]
 check("out-of-season tabs carry no content",
       all(not t["cards"] and not t["tables"]

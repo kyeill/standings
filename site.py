@@ -122,6 +122,8 @@ const panes=[...document.querySelectorAll('section')];
 function show(key,push){
   tabs.forEach(b=>b.setAttribute('aria-selected',b.dataset.k===key));
   panes.forEach(p=>p.classList.toggle('on',p.dataset.k===key));
+  const btn=tabs.find(b=>b.dataset.k===key);
+  if(btn&&btn.scrollIntoView)btn.scrollIntoView({inline:'nearest',block:'nearest'});
   try{localStorage.setItem('tab',key)}catch(e){}
   if(push)history.replaceState(null,'','#'+key);
 }
@@ -130,6 +132,26 @@ const start=location.hash.slice(1)||(()=>{try{return localStorage.getItem('tab')
   catch(e){return null}})()||(tabs[0]&&tabs[0].dataset.k);
 if(start&&tabs.some(b=>b.dataset.k===start))show(start,false);
 else if(tabs[0])show(tabs[0].dataset.k,false);
+// Swipe between tabs. The gesture must be HORIZONTAL -- comparing dx to dy
+// and requiring a clear winner -- or an ordinary vertical scroll down a long
+// standings table keeps flicking you into the next sport.
+let sx=0, sy=0, tracking=false;
+const MIN=50;
+addEventListener('touchstart',e=>{
+  if(e.touches.length!==1){tracking=false;return}
+  sx=e.touches[0].clientX; sy=e.touches[0].clientY; tracking=true;
+},{passive:true});
+addEventListener('touchend',e=>{
+  if(!tracking)return;
+  tracking=false;
+  const t=e.changedTouches[0];
+  const dx=t.clientX-sx, dy=t.clientY-sy;
+  if(Math.abs(dx)<MIN||Math.abs(dx)<=Math.abs(dy))return;
+  const cur=tabs.findIndex(b=>b.getAttribute('aria-selected')==='true');
+  const next=cur+(dx<0?1:-1);
+  if(next>=0&&next<tabs.length)show(tabs[next].dataset.k,true);
+},{passive:true});
+
 if('serviceWorker' in navigator)
   navigator.serviceWorker.register('./sw.js').catch(()=>{});
 """

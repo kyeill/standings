@@ -9,14 +9,77 @@ Two display modes, per Kyle's call on 2026-08-25:
            because those sports either have no cut line (college: the race is
            a poll or a bracket) or their table IS the competition (soccer).
 
-A tab may hold several tables. College combines Michigan and Cornell across
-three sports; the Tottenham tab combines the Premier League with whichever
-European competition is running.
+Tab order and headings are his, given 2026-08-25: CFB CBB HKY EPL NFL MLB NBA
+NHL MLS. College is split by SPORT rather than by school, so Michigan and
+Cornell appear together on each of the three college tabs. HKY is COLLEGE
+hockey; the NHL has its own tab. Tottenham's European competitions sit on the
+EPL tab alongside the domestic table.
 """
 
 GAMES, POINTS = "games", "points"
 
+MICHIGAN, CORNELL = "Michigan Wolverines", "Cornell Big Red"
+SPURS = "Tottenham Hotspur"
+
 TABS = [
+    {
+        "key": "cfb", "label": "CFB", "mode": "table",
+        "groups": [
+            {"key": "cfb", "path": "football/college-football", "group": 80,
+             "label": "Big Ten", "teams": [MICHIGAN],
+             "basis": "conference", "unit": GAMES, "poll": "ap"},
+            # Cornell is Ivy, which is FCS -- a different feed entirely.
+            {"key": "cfb-fcs", "path": "football/college-football", "group": 81,
+             "label": "Ivy League", "teams": [CORNELL],
+             "basis": "conference", "unit": GAMES, "poll": "fcs"},
+        ],
+    },
+    {
+        "key": "cbb", "label": "CBB", "mode": "table",
+        "groups": [
+            {"key": "cbb", "path": "basketball/mens-college-basketball",
+             "label": "Big Ten", "teams": [MICHIGAN],
+             "basis": "conference", "unit": GAMES, "poll": "ap"},
+            {"key": "cbb-ivy", "path": "basketball/mens-college-basketball",
+             "label": "Ivy League", "teams": [CORNELL],
+             "basis": "conference", "unit": GAMES, "poll": "ap"},
+        ],
+    },
+    {
+        # College hockey. ESPN publishes no standings at any level, so these
+        # are derived from game results in chockey.py.
+        "key": "hky", "label": "HKY", "mode": "table",
+        "groups": [
+            {"key": "chockey-b10", "path": "hockey/mens-college-hockey",
+             "label": "Big Ten", "teams": [MICHIGAN],
+             "basis": "conference", "unit": GAMES, "derived": True},
+            {"key": "chockey-ecac", "path": "hockey/mens-college-hockey",
+             "label": "ECAC", "teams": [CORNELL],
+             "basis": "conference", "unit": GAMES, "derived": True},
+        ],
+    },
+    {
+        "key": "epl", "label": "EPL", "mode": "table",
+        "groups": [
+            {"key": "epl", "path": "soccer/eng.1", "label": "Premier League",
+             "teams": [SPURS], "unit": POINTS,
+             "line": 4, "line_label": "Champions League"},
+            # A European competition only has a table during its league phase;
+            # once the knockouts start there is nothing to stand in one.
+            {"key": "ucl", "path": "soccer/uefa.champions",
+             "label": "Champions League", "teams": [SPURS], "unit": POINTS,
+             "line": 8, "line_label": "last 16", "optional": True,
+             "require_phase": "league-phase"},
+            {"key": "uel", "path": "soccer/uefa.europa",
+             "label": "Europa League", "teams": [SPURS], "unit": POINTS,
+             "line": 8, "line_label": "last 16", "optional": True,
+             "require_phase": "league-phase"},
+            {"key": "uecl", "path": "soccer/uefa.europa.conf",
+             "label": "Conference League", "teams": [SPURS], "unit": POINTS,
+             "line": 8, "line_label": "last 16", "optional": True,
+             "require_phase": "league-phase"},
+        ],
+    },
     {
         "key": "nfl", "label": "NFL", "mode": "tracker",
         "groups": [{
@@ -50,56 +113,7 @@ TABS = [
         }],
     },
     {
-        "key": "college", "label": "College", "mode": "table",
-        "groups": [
-            {"key": "cfb", "path": "football/college-football", "group": 80,
-             "label": "Football -- Big Ten", "teams": ["Michigan Wolverines"],
-             "basis": "conference", "unit": GAMES, "poll": "ap"},
-            {"key": "cfb-fcs", "path": "football/college-football", "group": 81,
-             "label": "Football -- Ivy League", "teams": ["Cornell Big Red"],
-             "basis": "conference", "unit": GAMES, "poll": "fcs"},
-            {"key": "cbb", "path": "basketball/mens-college-basketball",
-             "label": "Basketball -- Big Ten", "teams": ["Michigan Wolverines"],
-             "basis": "conference", "unit": GAMES, "poll": "ap"},
-            {"key": "cbb-ivy", "path": "basketball/mens-college-basketball",
-             "label": "Basketball -- Ivy League", "teams": ["Cornell Big Red"],
-             "basis": "conference", "unit": GAMES, "poll": "ap"},
-            # ESPN publishes no college hockey standings at any level, so
-            # chockey.py derives them from game results. Michigan and Cornell
-            # are in different conferences, hence two groups.
-            {"key": "chockey-b10", "path": "hockey/mens-college-hockey",
-             "label": "Hockey -- Big Ten", "teams": ["Michigan Wolverines"],
-             "basis": "conference", "unit": GAMES, "derived": True},
-            {"key": "chockey-ecac", "path": "hockey/mens-college-hockey",
-             "label": "Hockey -- ECAC", "teams": ["Cornell Big Red"],
-             "basis": "conference", "unit": GAMES, "derived": True},
-        ],
-    },
-    {
-        "key": "spurs", "label": "Tottenham", "mode": "table",
-        "groups": [
-            {"key": "epl", "path": "soccer/eng.1", "label": "Premier League",
-             "teams": ["Tottenham Hotspur"], "unit": POINTS,
-             "line": 4, "line_label": "Champions League"},
-            {"key": "ucl", "path": "soccer/uefa.champions",
-             "label": "Champions League -- league phase",
-             "teams": ["Tottenham Hotspur"], "unit": POINTS,
-             "line": 8, "line_label": "last 16", "optional": True,
-             "require_phase": "league-phase"},
-            {"key": "uel", "path": "soccer/uefa.europa",
-             "label": "Europa League -- league phase",
-             "teams": ["Tottenham Hotspur"], "unit": POINTS,
-             "line": 8, "line_label": "last 16", "optional": True,
-             "require_phase": "league-phase"},
-            {"key": "uecl", "path": "soccer/uefa.europa.conf",
-             "label": "Conference League -- league phase",
-             "teams": ["Tottenham Hotspur"], "unit": POINTS,
-             "line": 8, "line_label": "last 16", "optional": True,
-             "require_phase": "league-phase"},
-        ],
-    },
-    {
-        "key": "mls", "label": "Atlanta", "mode": "table",
+        "key": "mls", "label": "MLS", "mode": "table",
         "groups": [{
             "key": "mls", "path": "soccer/usa.1", "label": "Eastern Conference",
             "teams": ["Atlanta United"], "unit": POINTS,
