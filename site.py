@@ -139,7 +139,12 @@ self.addEventListener('activate',e=>{e.waitUntil(
   .then(()=>self.clients.claim()))});
 self.addEventListener('fetch',e=>{
   if(e.request.method!=='GET')return;
-  e.respondWith(fetch(e.request).then(r=>{
+  // The page itself is always fetched with the HTTP cache bypassed. GitHub
+  // Pages serves index.html with max-age=600, so after a rebuild the browser
+  // would hand the service worker a stale copy for ten minutes and the app
+  // would quietly show yesterday's build.
+  const opts = e.request.mode === 'navigate' ? {cache:'no-store'} : undefined;
+  e.respondWith(fetch(e.request, opts).then(r=>{
     const copy=r.clone();
     // Cross-origin font and logo responses are opaque and reject on put,
     // so the write must never be allowed to fail the fetch.
@@ -498,8 +503,11 @@ def main():
         json.dump(MANIFEST, fh, indent=1)
     with open(os.path.join(SITE, "icon.svg"), "w", encoding="utf-8") as fh:
         fh.write(ICON)
+    # Include the build time, not just the date: two builds on one day would
+    # otherwise share a cache name and the old entries would survive.
+    stamp = data["built"].replace("-", "") + datetime.datetime.now().strftime("%H%M%S")
     with open(os.path.join(SITE, "sw.js"), "w", encoding="utf-8") as fh:
-        fh.write(SW % {"v": data["built"].replace("-", "")})
+        fh.write(SW % {"v": stamp})
     live = [t["label"] for t in data["tabs"] if t["live"]]
     print("wrote %s (%.1f KB)" % (os.path.join(SITE, "index.html"), len(page) / 1024))
     print("in season: %s" % (", ".join(live) or "nothing"))
