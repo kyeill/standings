@@ -86,6 +86,9 @@ TABS = [
             "key": "nfl", "path": "football/nfl", "label": "NFC",
             "teams": ["Detroit Lions"], "spots": 7, "unit": GAMES,
             "spots_label": "wild card", "odds": "nfl",
+            # Division table, then the wild-card race among the teams that are
+            # not leading one. Three wild cards per conference.
+            "sections": ["division", "wildcard"], "wildcards": 3,
         }],
     },
     {
@@ -94,6 +97,7 @@ TABS = [
             "key": "mlb", "path": "baseball/mlb", "label": "American League",
             "teams": ["Detroit Tigers"], "spots": 6, "unit": GAMES,
             "spots_label": "wild card", "odds": "mlb",
+            "sections": ["division", "wildcard"], "wildcards": 3,
         }],
     },
     {
@@ -102,6 +106,7 @@ TABS = [
             "key": "nba", "path": "basketball/nba", "label": "Eastern Conference",
             "teams": ["Detroit Pistons", "Cleveland Cavaliers"], "spots": 10,
             "unit": GAMES, "spots_label": "play-in", "odds": "nba",
+            "sections": ["conference"],
         }],
     },
     {
@@ -110,6 +115,7 @@ TABS = [
             "key": "nhl", "path": "hockey/nhl", "label": "Eastern Conference",
             "teams": ["Detroit Red Wings"], "spots": 8, "unit": POINTS,
             "spots_label": "wild card", "odds": "nhl",
+            "sections": ["conference"],
         }],
     },
     {

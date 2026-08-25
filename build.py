@@ -85,6 +85,19 @@ def tracker(group, today, record=True):
             div = {"name": me["division"], "rank": rank, "of": len(peers),
                    "gap": behind}
 
+        sections = _sections(group, me, div_rows, pool, unit)
+        # The verdict at the top of the card answers the question the sport
+        # actually poses: a division leader is not in the wild-card race, so
+        # reporting a wild-card gap for them would be nonsense.
+        leads = bool(div and div["rank"] == 1)
+        wc = next((s for s in sections if s["kind"] == "wildcard"), None)
+        if leads and div:
+            cut, cut_label = div["gap"], "in the division"
+        elif wc:
+            cut, cut_label = wc["gap"], "of the %s line" % group["spots_label"]
+        else:
+            cut, cut_label = cut, "of the %s line" % group["spots_label"]
+
         pct = odds_table.get(me["team"])
         prev, delta = history.trend(group["key"], me["team"], pct, today)
         cards.append({
@@ -95,11 +108,11 @@ def tracker(group, today, record=True):
             "streak": st.get("streak"), "last10": model.short(st.get("Last Ten Games")),
             "unit": unit, "seed": seed, "spots": spots, "of": len(pool),
             "spots_label": group["spots_label"], "ladder_name": group["label"],
-            "cut": cut, "division": div,
+            "cut": cut, "cut_label": cut_label, "division": div,
+            "sections": sections, "leads_division": leads,
             "clincher": (st.get("clincher") or "").strip().lower(),
             "magic": st.get("magicNumberDivision") or "",
             "odds": pct, "odds_prev": prev, "odds_delta": delta,
-            "rows": rows_for(pool, me, unit, group["teams"]),
         })
     # Two tracked teams in one conference (the Pistons and the Cavaliers) share
     # a ladder, so only the first card draws it; the rest are highlighted
@@ -108,9 +121,71 @@ def tracker(group, today, record=True):
     for c in cards:
         if c.get("missing"):
             continue
+        # Two tracked teams in one conference share a ladder; only the first
+        # card draws the tables.
         c["show_table"] = c["ladder_name"] not in seen
         seen.add(c["ladder_name"])
     return cards
+
+
+def _sections(group, me, div_rows, pool, unit):
+    """The tables a tracker card shows, per the league's `sections`.
+
+    division  my division, everyone in it, games behind the leader
+    wildcard  the race for the remaining spots: the conference MINUS the teams
+              currently leading a division, since those hold the automatic
+              berths and are not competing for a wild card
+    conference  one straight ladder, seeds 1..N -- what the NBA and NHL use
+    """
+    tracked = group["teams"]
+    wanted = group.get("sections") or ["conference"]
+    out = []
+
+    for kind in wanted:
+        if kind == "division":
+            peers = model._order([r for r in div_rows
+                                  if r["division"] == me["division"]], unit)
+            if not peers:
+                continue
+            out.append({
+                "kind": "division", "label": me["division"], "cut": None,
+                "cut_label": None,
+                "gap": model.gap(me["stats"], peers[0]["stats"], unit),
+                "rows": rows_for(peers, me, unit, tracked),
+            })
+        elif kind == "wildcard":
+            leaders = set()
+            for row in div_rows:
+                if row["conference"] != me["conference"]:
+                    continue
+                same = model._order([r for r in div_rows
+                                     if r["division"] == row["division"]], unit)
+                if same:
+                    leaders.add(same[0]["team"])
+            chase = [r for r in pool if r["team"] not in leaders]
+            if not chase:
+                continue
+            spots = group.get("wildcards", 3)
+            names = [r["team"] for r in chase]
+            gap = None
+            if me["team"] in names and len(chase) > spots:
+                at = names.index(me["team"])
+                other = chase[spots] if at < spots else chase[spots - 1]
+                gap = (-abs(model.gap(other["stats"], me["stats"], unit) or 0)
+                       if at < spots
+                       else model.gap(me["stats"], other["stats"], unit))
+            out.append({
+                "kind": "wildcard", "label": "Wild card race", "cut": spots,
+                "cut_label": group["spots_label"], "gap": gap,
+                "rows": rows_for(chase, me, unit, tracked),
+            })
+        else:
+            out.append({
+                "kind": "conference", "label": group["label"],
+                "cut": group["spots"], "cut_label": group["spots_label"],
+                "gap": None, "rows": rows_for(pool, me, unit, tracked),
+            })
+    return out
 
 
 def rows_for(pool, me, unit, tracked):

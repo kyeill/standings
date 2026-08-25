@@ -117,6 +117,9 @@ def rows(league_path, level=2, group=None, max_age_min=180):
                 "conference": conference or "",
                 "division": division or node.get("name") or "",
                 "team": team.get("displayName") or "",
+                # School without the mascot: "Michigan", not "Michigan
+                # Wolverines". Config matching still uses the full name.
+                "location": team.get("location") or "",
                 "abbr": team.get("abbreviation") or "",
                 "id": team.get("id") or "",
                 "logo": (team.get("logos") or [{}])[0].get("href") or "",

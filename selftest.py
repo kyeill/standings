@@ -166,7 +166,26 @@ card = mlb["cards"][0]
 check("MLB card is the Tigers", card["team"], "Detroit Tigers")
 check("MLB card has odds", card["odds"] is not None, True)
 check("MLB card knows its cut-line gap", card["cut"] is not None, True)
-check("ladder is the whole league", len(card["rows"]) >= 15, True)
+
+print("\nsections")
+kinds = [s["kind"] for s in card["sections"]]
+check("MLB shows division then wild card", kinds, ["division", "wildcard"])
+div = card["sections"][0]
+wc = card["sections"][1]
+check("division holds only the division", len(div["rows"]), 5)
+check("division has no cut line", div["cut"], None)
+check("wild card is cut after three", wc["cut"], 3)
+# A division leader holds an automatic berth and is not chasing a wild card,
+# so it must not appear in the wild-card field.
+leaders = {r["team"] for r in div["rows"]}
+top = div["rows"][0]["team"]
+check("the division leader is absent from the wild-card race",
+      top in {r["team"] for r in wc["rows"]}, False)
+check("the wild-card field is smaller than the league",
+      len(wc["rows"]) < 15, True)
+nba = next(t for t in leagues.TABS if t["key"] == "nba")
+check("NBA is configured for one conference table",
+      nba["groups"][0]["sections"], ["conference"])
 
 print("\n%d passed, %d failed" % (len(PASS), len(FAIL)))
 if FAIL:

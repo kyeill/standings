@@ -239,6 +239,11 @@ def tracker_card(card):
         verdict, cls = "Clinched", "in"
     elif card["cut"] is None:
         verdict, cls = "-", ""
+    elif card.get("leads_division"):
+        # Leading on a tiebreak with an identical record is a real state, and
+        # "0 ahead" is a silly way to say it.
+        verdict, cls = (("Tied", "in") if abs(card["cut"] or 0) < 0.01
+                        else ("%s ahead" % fmt(card["cut"], unit), "in"))
     elif inside:
         verdict, cls = "%s clear" % fmt(card["cut"], unit), "in"
     else:
@@ -275,32 +280,53 @@ def tracker_card(card):
                 esc(card["record"]), ordinal(card["seed"]), card["of"],
                 " &middot; ".join(sub) if sub else ""))
     verdict_row = ('<div class="verdict"><span class="big %s">%s</span>'
-                   '<span class="gapline">of the %s line</span></div>' % (
-                       cls, esc(verdict), esc(card["spots_label"])))
+                   '<span class="gapline">%s</span></div>' % (
+                       cls, esc(verdict), esc(card.get("cut_label") or "")))
 
-    rows = card["rows"]
-    idx = window_rows(len(rows), spots, (card["seed"] or 1) - 1)
+    tables = ""
+    if card.get("show_table", True):
+        tables = "".join(section_table(s, card) for s in card.get("sections") or [])
+    return '<div class="card">%s%s%s%s</div>' % (head, verdict_row, odds_bit, tables)
+
+
+def section_table(sec, card):
+    """One table inside a tracker card: division, wild card, or conference."""
+    unit = card["unit"]
+    rows, cut = sec["rows"], sec["cut"]
+    mine_at = next((i for i, r in enumerate(rows) if r["mine"]), 0)
+    # A division is four or five teams -- show all of them. A conference or a
+    # wild-card field is a dozen or more, so collapse everything that is not
+    # next to a decision.
+    idx = (range(len(rows)) if sec["kind"] == "division"
+           else window_rows(len(rows), cut or len(rows), mine_at))
     body, last = [], None
     for i in idx:
         if last is not None and i > last + 1:
             body.append('<tr class="skip"><td colspan="4">%d more</td></tr>'
                         % (i - last - 1))
-        if i == spots:
+        if cut and i == cut:
             body.append('<tr class="cut"><td colspan="4">%s cut line</td></tr>'
-                        % esc(card["spots_label"]))
+                        % esc(sec["cut_label"] or "playoff"))
         r = rows[i]
         body.append('<tr class="%s" style="--tint:#%s"><td>%s<span class="nm">%s</span>'
                     '</td><td class="muted">%s</td><td>%s</td><td>%s</td></tr>' % (
                         "mine" if r["mine"] else "", tint(r["team"]),
-                        crest(r["logo"]), esc(r["team"]), i + 1,
-                        esc(record_of(r, unit)),
-                        behind(r["gb"], unit)))
+                        crest(r["logo"]), esc(name_of(r)), i + 1,
+                        esc(record_of(r, unit)), behind(r["gb"], unit)))
         last = i
-    table = ""
-    if card.get("show_table", True):
-        table = ('<table><tr><th>%s</th><th>Seed</th><th>Record</th><th>GB</th></tr>'
-                 '%s</table>' % (esc(card["ladder_name"]), "".join(body)))
-    return '<div class="card">%s%s%s%s</div>' % (head, verdict_row, odds_bit, table)
+    # Only the conference ladder is a real seeding; the numbers beside a
+    # division or a wild-card field are just positions within that field.
+    head = "Seed" if sec["kind"] == "conference" else "Pos"
+    return ('<table><tr><th>%s</th><th>%s</th><th>Record</th><th>GB</th></tr>%s</table>'
+            % (esc(sec["label"]), head, "".join(body)))
+
+
+def name_of(row, plain=False):
+    """College reads better without the mascot -- "Michigan", not "Michigan
+    Wolverines" -- and ESPN's `location` is exactly that."""
+    if plain and row.get("location"):
+        return row["location"]
+    return row.get("team") or ""
 
 
 def record_of(row, unit):
@@ -327,7 +353,7 @@ def table_block(t):
                         % (span, esc(t["line_label"] or "cut")))
         rank = ('<span class="rk">%s</span>' % r["poll"]) if r.get("poll") else ""
         name = '%s%s<span class="nm">%s</span>' % (crest(r["logo"]), rank,
-                                                   esc(r["team"]))
+                                                   esc(name_of(r, plain=college)))
         if college:
             # college hockey has ties, so print the record string as given
             # rather than rebuilding it from wins and losses alone

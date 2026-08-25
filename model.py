@@ -158,7 +158,7 @@ def _row(r, me, unit, basis="overall", leader=None):
     s = r["stats"]
     return {
         "team": r["team"], "abbr": r["abbr"], "logo": r["logo"],
-        "id": r.get("id"),
+        "id": r.get("id"), "location": r.get("location") or "",
         "mine": r["team"] == me["team"],
         "record": s.get("overall") or "%s-%s" % (s.get("wins"), s.get("losses")),
         "conf_record": s.get("vs. Conf.") or s.get("vs. Conf") or "",
