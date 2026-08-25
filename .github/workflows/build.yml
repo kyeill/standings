@@ -1,0 +1,69 @@
+name: Build standings
+
+on:
+  schedule:
+    # Three slots, because GitHub delays scheduled runs -- sports-daily saw a
+    # 64 minute delay on its first real morning. 10:00 UTC is 06:00 Eastern;
+    # the later two only build if the day has not been built yet.
+    - cron: "0 10 * * *"
+    - cron: "0 11 * * *"
+    - cron: "0 12 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: Skip if already built today
+        id: gate
+        run: |
+          today=$(TZ=America/New_York date +%F)
+          last=$(cat output/history/_last_build.txt 2>/dev/null || echo none)
+          if [ "$today" = "$last" ]; then
+            echo "run=no" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=yes" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Build
+        if: steps.gate.outputs.run == 'yes'
+        run: |
+          python site.py
+          TZ=America/New_York date +%F > output/history/_last_build.txt
+      - name: Commit odds history
+        if: steps.gate.outputs.run == 'yes'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f output/history
+          # [skip ci] is essential: without it this push retriggers the
+          # workflow forever.
+          git diff --staged --quiet || git commit -m "Record odds history [skip ci]"
+          git push
+      - uses: actions/upload-pages-artifact@v3
+        if: steps.gate.outputs.run == 'yes'
+        with:
+          path: output/site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

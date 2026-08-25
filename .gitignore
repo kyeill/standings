@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+cache/
+# The built app is published from the workflow, not committed -- except the
+# odds history, which is the one thing that cannot be regenerated.
+output/*
+!output/history/
