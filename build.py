@@ -104,6 +104,20 @@ def tracker(group, today, record=True):
 
         pct = odds_table.get(me["team"])
         prev, delta = history.trend(group["key"], me["team"], pct, today)
+        # The odds are annotated onto my team's name in exactly ONE table: the
+        # division when it is leading (that is the race it is in), otherwise
+        # the wild-card race. With neither, the conference ladder carries it.
+        if pct is not None:
+            order = (["division"] if leads else ["wildcard"]) + ["conference",
+                                                                "division"]
+            target = next((sec for kind in order for sec in sections
+                           if sec["kind"] == kind), None)
+            if target:
+                for row in target["rows"]:
+                    if row["team"] == me["team"]:
+                        row["odds_note"] = pct
+                        row["odds_note_delta"] = delta
+                        break
         cards.append({
             "team": me["team"], "logo": me["logo"], "missing": None,
             "record": model.short(st.get("overall")) or "%s-%s" % (
@@ -146,7 +160,10 @@ def _sections(group, me, div_rows, pool, unit, odds_table=None):
     # Odds go in a column, the same way the college tabs carry CFP odds, NPI
     # and projected seed -- so every sport reads the same and the card needs
     # no header explaining itself.
-    column = {"label": "Odds", "fmt": "pct"} if odds_table else None
+    # No per-team odds column: the tracked team carries its own figure in
+    # parentheses after its name, and a column of everyone else's odds is
+    # noise on a page about my team.
+    column = None
     out = []
 
     for kind in wanted:
@@ -188,7 +205,7 @@ def _sections(group, me, div_rows, pool, unit, odds_table=None):
             # render with a plus.
             line = chase[spots - 1] if len(chase) >= spots else None
             out.append({
-                "kind": "wildcard", "label": "Wild card race", "cut": spots,
+                "kind": "wildcard", "label": "Wild Card Race", "cut": spots,
                 "cut_label": group["spots_label"], "gap": gap,
                 "from_cut": True, "column": column,
                 "rows": _with_odds(rows_for(chase, me, unit, tracked, leader=line),

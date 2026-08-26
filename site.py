@@ -44,7 +44,9 @@ CSS = """
 :root{
   --bg:#16161a; --card:#1e1e23; --ink:#ececea; --muted:#9a9a95;
   --line:#2e2e35; --accent:#e0834f; --chip:#2a2a31;
-  --good:#6bbf7b; --bad:#d4676a; --cut:#c8863f;
+  --good:#6bbf7b; --bad:#d4676a;
+  /* sports-daily's --rank blue; the orange read as an alert it is not */
+  --cut:#8fb0d8;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);
@@ -96,7 +98,8 @@ tr.belowcut td{border-top:2px dashed var(--cut)}
 tr.skip td{color:var(--muted);font-size:12px;padding:2px 0}
 .logo{width:16px;height:16px;vertical-align:middle;margin-right:6px}
 .nm{vertical-align:middle}
-.rk{color:#8fb0d8;font-size:11.5px;margin-right:4px;vertical-align:middle}
+.rk{color:var(--cut);font-size:11.5px;margin-right:4px;vertical-align:middle}
+.oddsnote{color:var(--muted);font-weight:400}
 .muted{color:var(--muted)}
 .note{color:var(--muted);font-size:13px;margin:9px 0;padding:9px 11px;
       border:1px dashed var(--line);border-radius:9px}
@@ -276,26 +279,9 @@ def tracker_card(card):
         return ""
     out = []
     for i, sec in enumerate(card.get("sections") or []):
-        note = trend_line(card) if i == 0 else ""
-        out.append('<div class="card"><div class="who">%s</div>%s%s</div>'
-                   % (esc(sec["label"]), note, section_table(sec, card)))
+        out.append('<div class="card"><div class="who">%s</div>%s</div>'
+                   % (esc(sec["label"]), section_table(sec, card)))
     return "".join(out)
-
-
-def trend_line(card):
-    """The one thing a column cannot show: which way the odds have moved."""
-    if card["odds"] is None:
-        return ""
-    delta = card["odds_delta"]
-    if delta is None:
-        move = "no reading a week ago yet"
-    elif abs(delta) < 0.05:
-        move = "level with a week ago"
-    else:
-        move = '<span class="delta %s">%s%.0f since last week</span>' % (
-            "up" if delta > 0 else "down", "+" if delta > 0 else "-", abs(delta))
-    return '<div class="sub">%.0f%% to make the playoffs &middot; %s</div>' % (
-        card["odds"], move)
 
 
 def section_table(sec, card):
@@ -316,7 +302,8 @@ def section_table(sec, card):
                     '<td>%s<span class="nm">%s</span></td>%s'
                     '<td class="muted">%s</td><td>%s</td><td>%s</td></tr>' % (
                         klass, row_shade(r["team"]),
-                        crest(r["logo"]), esc(name_of(r)), cell, i + 1,
+                        crest(r["logo"]), esc(name_of(r)) + odds_note(r),
+                        cell, i + 1,
                         esc(record_of(r, unit)), behind(r["gb"], unit)))
     # Only the conference ladder is a real seeding; the numbers beside a
     # division or a wild-card field are just positions within that field.
@@ -333,6 +320,20 @@ def name_of(row, plain=False):
     if plain and row.get("location"):
         return row["location"]
     return row.get("team") or ""
+
+
+def odds_note(row):
+    """My team's playoff odds, in parentheses after its name, on exactly one
+    table: the division when it leads one, the wild-card race otherwise."""
+    pct = row.get("odds_note")
+    if pct is None:
+        return ""
+    delta = row.get("odds_note_delta")
+    move = ""
+    if delta is not None and abs(delta) >= 0.5:
+        move = ' <span class="delta %s">%s%.0f</span>' % (
+            "up" if delta > 0 else "down", "+" if delta > 0 else "-", abs(delta))
+    return ' <span class="oddsnote">(%.0f%%%s)</span>' % (pct, move)
 
 
 def record_of(row, unit):
@@ -378,16 +379,11 @@ def table_block(t):
         body.append('<tr class="%s" style="--tintbg:#%s"><td>%s</td>%s</tr>' % (
             klass, row_shade(r["team"]), name, cells))
     # Say so when the numbers are computed rather than published.
-    odds_line = ""
-    if t.get("odds"):
-        odds_line = ('<div class="sub">%s &mdash; <b>%.0f%%</b> %s</div>'
-                     % (esc(short_team(t["odds"]["team"])), t["odds"]["pct"],
-                        esc(t["odds"]["label"])))
     note = ('<div class="sub">computed from game results &mdash; ESPN publishes '
             "no college hockey standings. Rank shown is the NCAA&rsquo;s NPI, "
             'which decides tournament selection.</div>') if t.get("derived") else ""
-    return ('<div class="card"><div class="who">%s</div>%s%s<table>%s%s</table></div>'
-            % (esc(t["label"]), odds_line, note, cols, "".join(body)))
+    return ('<div class="card"><div class="who">%s</div>%s<table>%s%s</table></div>'
+            % (esc(t["label"]), note, cols, "".join(body)))
 
 
 def extra_value(value, spec):
