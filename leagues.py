@@ -142,8 +142,3 @@ TABS = [
     },
 ]
 
-
-def all_groups():
-    for tab in TABS:
-        for group in tab["groups"]:
-            yield tab, group

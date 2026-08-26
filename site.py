@@ -93,7 +93,6 @@ td{padding:4px 0;border-top:1px solid var(--line);text-align:right;font-size:13.
    was running over the logo. */
 tr.mine td{background:var(--tintbg,rgba(255,255,255,.05));font-weight:600}
 tr.belowcut td{border-top:1px dashed var(--cut)}
-tr.skip td{color:var(--muted);font-size:12px;padding:2px 0}
 .logo{width:16px;height:16px;vertical-align:middle;margin-right:6px}
 .nm{vertical-align:middle}
 .rk{color:var(--cut);font-weight:400}
@@ -130,7 +129,6 @@ footer{margin-top:34px;color:var(--muted);font-size:12px;
   td:last-child,th:last-child{padding-right:8px}
   .logo{width:19px;height:19px;margin-right:8px}
   .rk{font-size:12.5px}
-  tr.skip td{font-size:13px}
   .note{font-size:14px;padding:11px 13px}
   footer{font-size:13px}
 }
@@ -236,13 +234,9 @@ def row_shade(team, lighten=0.42, strength=0.34):
     return "%02x%02x%02x" % out
 
 
-def unit_word(unit):
-    # Points are labelled by the column header now, not repeated in every cell.
-    return ""
 
-
-def fmt(value, unit):
-    return "%g%s" % (abs(value), unit_word(unit))
+def fmt(value, unit=None):
+    return "%g" % abs(value)
 
 
 def behind(value, unit):
@@ -313,7 +307,7 @@ def name_of(row, plain=False):
     return row.get("team") or ""
 
 
-def index_cells(rows, blank_ties=True):
+def index_cells(rows):
     """The leading 1,2,3 column, blanking a row tied with the one above it.
 
     Tied means the same value in the column the table is ORDERED by, which is
@@ -327,7 +321,7 @@ def index_cells(rows, blank_ties=True):
     out, last = [], object()
     for i, r in enumerate(rows):
         key = round(r["gb"], 3) if r.get("gb") is not None else None
-        out.append("" if (blank_ties and i and key == last) else str(i + 1))
+        out.append("" if (i and key == last) else str(i + 1))
         last = key
     return out
 
