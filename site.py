@@ -125,11 +125,13 @@ footer{margin-top:34px;color:var(--muted);font-size:12px;
   .hide-sm{display:none}
   th:first-child,td:first-child{width:30px;padding:4px 2px 4px 4px}
   th:nth-child(2),td:nth-child(2){padding-left:8px}
-  th:nth-child(n+3),td:nth-child(n+3){width:52px}
+  /* Narrow: the cells hold "0-0", "76%" and "62-70", so the room goes to the
+     team name instead -- it is what carries the school nickname. */
+  th:nth-child(n+3),td:nth-child(n+3){width:46px}
 }
 @media (max-width:420px){
   td,th{font-size:12.5px}
-  th:nth-child(n+3),td:nth-child(n+3){width:48px}
+  th:nth-child(n+3),td:nth-child(n+3){width:44px}
 }
 /* Desktop only. Everything above is the phone layout, which is already right,
    so this scales UP from 641px rather than touching the base rules. Sizes
@@ -470,7 +472,7 @@ def table_block(t):
             school, nick = college_parts(r)
             label = '<span class="nm">%s</span>%s' % (
                 esc(school),
-                '<span class="nick hide-sm">%s</span>' % esc(nick) if nick else "")
+                '<span class="nick">%s</span>' % esc(nick) if nick else "")
         else:
             label = '<span class="nm">%s</span>' % esc(club_name(r["team"]))
         name = "%s%s%s" % (crest(r), label, rank)

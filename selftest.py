@@ -263,6 +263,16 @@ check("a team whose name is just the school has no nickname",
       sitebuild.college_parts({"team": "Michigan", "location": "Michigan"}),
       ("Michigan", ""))
 
+print("\ncolumn counts")
+# The Ivy tables have no metric of their own -- FCS has no FPI odds and the
+# BPI ranks only 50 teams -- so they came out a column narrower than the Big
+# Ten table above them, and the numbers shifted halfway down the page.
+_data = build.build_all(include_offseason=True)
+for _tab in _data["tabs"]:
+    if len(_tab["tables"]) > 1:
+        check("%s tables all carry the same columns" % _tab["label"],
+              len({bool(t.get("column")) for t in _tab["tables"]}), 1)
+
 print("\ncrest variants")
 import json as _json
 try:

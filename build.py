@@ -369,8 +369,27 @@ def build_all(today=None, include_offseason=False):
                 elif not group.get("optional"):
                     payload["notes"].append(
                         "%s: no standings available" % group.get("label"))
+        _match_columns(payload["tables"])
         tabs.append(payload)
     return {"built": today.isoformat(), "tabs": tabs, "failures": fetch.FAILURES}
+
+
+def _match_columns(tables):
+    """Give every table on a tab the same column count.
+
+    The Ivy tables carry no metric -- FCS has no FPI odds and the BPI ranks
+    only 50 teams -- so they came out one column narrower than the Big Ten
+    table above them, and the numbers shifted sideways halfway down the page.
+    They now carry the same column, empty.
+    """
+    spec = next((t["column"] for t in tables if t.get("column")), None)
+    if not spec:
+        return
+    for t in tables:
+        if not t.get("column"):
+            t["column"] = spec
+            for row in t["rows"]:
+                row["extra"] = None
 
 
 if __name__ == "__main__":

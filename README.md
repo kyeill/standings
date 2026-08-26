@@ -11,7 +11,7 @@ python site.py --all     same, but keep every sport, for testing
 python build.py          print what each tab resolved to, no HTML
 python mock.py           the three original design mockups
 python logos.py --write  re-measure which crest variant reads (rarely)
-python selftest.py       check the back end (93 assertions)
+python selftest.py       check the back end (96 assertions)
 ```
 
 Python is not on PATH:
@@ -38,7 +38,11 @@ League, MLS at 9 for the playoffs). The college tabs carry a per-team metric
 column: CFP odds, projected NCAA seed, and NPI respectively.
 
 Every table shows every team -- nothing is collapsed -- and tables use a fixed
-layout so the numeric columns land in the same place on every tab.
+layout so the numeric columns land in the same place on every tab. Tables on
+the SAME tab are forced to the same column count too: the Ivy tables carry no
+metric of their own, and without this they came out a column wider than the
+Big Ten table above them, shifting every number sideways halfway down the
+page.
 
 ## Columns
 
@@ -65,7 +69,7 @@ down the column. Points behind stays whole: hockey deals in whole points and
 "17.0" would be inventing precision.
 
 **Under 640px columns step aside**: Overall on college, W-D-L and GD on
-soccer (a phone league table is P and Pts), and the college nickname,
+soccer (a phone league table is P and Pts),
 and the index and numeric columns tighten. Six columns had left the team name
 47px on a 375px phone, truncating most of it; it is now 143px. Desktop keeps
 every column. College hockey is the exception that needs no breakpoint: it
@@ -106,8 +110,11 @@ Every MLS club then reads as two words or more, except LAFC, which is ESPN's
 actual one-word name rather than anything this rule removed.
 
 College is the other way round -- the school alone is too bare, so the tables
-read "Michigan Wolverines". The nickname is its own span and is the first
-thing to go under 640px, leaving "Michigan" on a phone.
+read "Michigan Wolverines" at **every** size. The room comes from the numeric
+columns instead, which hold "0-0", "76%" and "62-70" and shrink to 46px on a
+phone. At 393px that leaves 174px for the name and one or two of the 71
+college names truncate; hiding the nickname to save two names was the worse
+trade.
 
 A poll rank renders as a **suffix**, "Oregon (#2)". As a prefix its variable
 width ("1" against "14") started every team name at a different x position, so
