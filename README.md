@@ -11,7 +11,7 @@ python site.py --all     same, but keep every sport, for testing
 python build.py          print what each tab resolved to, no HTML
 python mock.py           the three original design mockups
 python logos.py --write  re-measure which crest variant reads (rarely)
-python selftest.py       check the back end (90 assertions)
+python selftest.py       check the back end (93 assertions)
 ```
 
 Python is not on PATH:
@@ -96,6 +96,11 @@ and SC stay, so Nashville SC and Inter Miami CF keep theirs.
   and Toronto FC would collapse to bare city names
 * a leading "FC Dallas" keeps its FC, where the letters are part of the name
 * accents are stripped, as in sports-daily
+
+Two clubs the rule cannot get right are named explicitly in `NAME_OVERRIDES`:
+Orlando City (dropping an SC that Nashville must keep) and New York Red Bulls
+(ESPN files them by sponsor as "Red Bull New York"). The list is kept short on
+purpose -- a rule needing a long exception list is the wrong rule.
 
 Every MLS club then reads as two words or more, except LAFC, which is ESPN's
 actual one-word name rather than anything this rule removed.

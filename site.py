@@ -357,6 +357,17 @@ def plain_text(text):
                    if not unicodedata.combining(c))
 
 
+# Clubs the suffix rule cannot get right, keyed on ESPN's displayName. Kept
+# small on purpose: a rule that needs a long exception list is the wrong rule.
+NAME_OVERRIDES = {
+    # ESPN files them by sponsor; nobody calls them that.
+    "Red Bull New York": "New York Red Bulls",
+    # Stripping SC generally would reduce Nashville SC to a bare city, so
+    # Orlando is named here instead.
+    "Orlando City SC": "Orlando City",
+}
+
+
 def club_name(name):
     """A soccer club as people say it. His rule, 2026-08-26.
 
@@ -367,6 +378,8 @@ def club_name(name):
     bare city names. A leading "FC Dallas" keeps its FC, where the letters are
     part of the name.
     """
+    if name in NAME_OVERRIDES:
+        return NAME_OVERRIDES[name]
     parts = plain_text(name or "").split()
     if len(parts) > 1 and parts[0] == "AFC":
         parts = parts[1:]

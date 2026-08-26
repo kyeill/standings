@@ -247,6 +247,13 @@ check("Toronto FC keeps its FC", sitebuild.club_name("Toronto FC"),
       "Toronto FC")
 check("three words can afford to lose the FC",
       sitebuild.club_name("San Diego FC"), "San Diego")
+# Two clubs the suffix rule cannot get right, named explicitly.
+check("Orlando loses its SC by name",
+      sitebuild.club_name("Orlando City SC"), "Orlando City")
+check("but Nashville keeps its SC, or it is a bare city",
+      sitebuild.club_name("Nashville SC"), "Nashville SC")
+check("the Red Bulls are not filed by sponsor",
+      sitebuild.club_name("Red Bull New York"), "New York Red Bulls")
 check("accents are stripped", sitebuild.plain_text("Montréal"), "Montreal")
 check("college splits into school and nickname",
       sitebuild.college_parts({"team": "Michigan Wolverines",
