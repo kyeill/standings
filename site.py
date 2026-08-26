@@ -318,11 +318,11 @@ def index_cells(rows, blank_ties=True):
 
     Tied means the same value in the column the table is ORDERED by, which is
     the gap column: conference games behind for college, games behind for the
-    American sports, points behind for hockey. Comparing overall records
-    instead would number three 15-5 Big Ten teams 2, 3 and 4.
+    American sports, points behind for hockey and soccer. Comparing overall
+    records instead would number three 15-5 Big Ten teams 2, 3 and 4.
 
-    A league table is the exception (blank_ties=False): clubs level on points
-    are still separated by goal difference, so every position is numbered.
+    Soccer counts as tied on POINTS even though goal difference decides the
+    table order -- his call, and it matches how a league table is read.
     """
     out, last = [], object()
     for i, r in enumerate(rows):
@@ -360,7 +360,7 @@ def table_block(t):
     else:
         cols = ("<tr><th>#</th><th>Team</th><th>P</th><th>W-D-L</th>"
                 "<th>GD</th><th>Pts</th>%s</tr>" % extra_head)
-    idx = index_cells(t["rows"], blank_ties=college)
+    idx = index_cells(t["rows"])
     body = []
     for i, r in enumerate(t["rows"]):
         # The rank goes AFTER the name. As a prefix its variable width ("1"

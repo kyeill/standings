@@ -44,9 +44,9 @@ layout so the numeric columns land in the same place on every tab.
 Every table leads with an index. A row **tied with the one above is left
 blank**, where tied means the same value in the column the table is ordered by
 -- conference games behind for college, games behind for the American sports,
-points behind for hockey. Comparing overall records instead would number three
-15-5 Big Ten teams 2, 3 and 4. A league table is the exception: clubs level on
-points are still split by goal difference, so every position is numbered.
+points behind for hockey and soccer. Comparing overall records instead would
+number three 15-5 Big Ten teams 2, 3 and 4. Soccer counts as tied on POINTS
+even though goal difference decides the order.
 
     tracker   # | Team | Record | GB
     hockey    # | Team | Points | PB      points, not games, and no "pts" suffix
