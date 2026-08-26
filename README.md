@@ -11,7 +11,7 @@ python site.py --all     same, but keep every sport, for testing
 python build.py          print what each tab resolved to, no HTML
 python mock.py           the three original design mockups
 python logos.py --write  re-measure which crest variant reads (rarely)
-python selftest.py       check the back end (86 assertions)
+python selftest.py       check the back end (90 assertions)
 ```
 
 Python is not on PATH:
@@ -88,11 +88,17 @@ teams have no dark file at all.
 
 ## Team names
 
-Soccer clubs follow sports-daily's rule: a trailing FC, CF or SC is dropped,
-because it says nothing on a page where every club is a football club and it
-costs width where there is least of it. "AFC Bournemouth" is just Bournemouth.
-A **leading** "FC Dallas" keeps its FC, where the letters are part of the name.
-Accents are stripped the same way.
+Soccer clubs keep their whole name except **FC** and **AFC** -- his call. CF
+and SC stay, so Nashville SC and Inter Miami CF keep theirs.
+
+* a leading "AFC" always goes: AFC Bournemouth is just Bournemouth
+* a trailing "FC" goes only while two words survive, or Charlotte FC, Austin FC
+  and Toronto FC would collapse to bare city names
+* a leading "FC Dallas" keeps its FC, where the letters are part of the name
+* accents are stripped, as in sports-daily
+
+Every MLS club then reads as two words or more, except LAFC, which is ESPN's
+actual one-word name rather than anything this rule removed.
 
 College is the other way round -- the school alone is too bare, so the tables
 read "Michigan Wolverines". The nickname is its own span and is the first

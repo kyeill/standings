@@ -358,18 +358,20 @@ def plain_text(text):
 
 
 def club_name(name):
-    """A soccer club as people say it, mirroring sports-daily.
+    """A soccer club as people say it. His rule, 2026-08-26.
 
-    A trailing FC, CF or SC says nothing on a page where every club is a
-    football club, and it costs width where there is least of it. "AFC
-    Bournemouth" is just Bournemouth. A LEADING "FC Dallas" keeps its FC,
-    because there the letters are part of the name.
+    Only **FC** and **AFC** come off; CF and SC stay, so Nashville SC and
+    Inter Miami CF keep theirs. A leading "AFC" always goes -- AFC Bournemouth
+    is just Bournemouth -- but a trailing "FC" goes only while at least two
+    words survive, or Charlotte FC, Austin FC and Toronto FC would collapse to
+    bare city names. A leading "FC Dallas" keeps its FC, where the letters are
+    part of the name.
     """
     parts = plain_text(name or "").split()
-    if len(parts) > 1 and parts[-1] in ("FC", "CF", "SC"):
-        parts = parts[:-1]
     if len(parts) > 1 and parts[0] == "AFC":
         parts = parts[1:]
+    if len(parts) > 2 and parts[-1] == "FC":
+        parts = parts[:-1]
     return " ".join(parts)
 
 

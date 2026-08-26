@@ -231,12 +231,22 @@ check("level still reads as a dash",
 print("\nteam names")
 check("a trailing FC is dropped", sitebuild.club_name("Atlanta United FC"),
       "Atlanta United")
-check("a trailing CF is dropped", sitebuild.club_name("Inter Miami CF"),
-      "Inter Miami")
+# Only FC and AFC come off. CF and SC stay, so these keep theirs.
+check("a trailing CF stays", sitebuild.club_name("Inter Miami CF"),
+      "Inter Miami CF")
+check("a trailing SC stays", sitebuild.club_name("Nashville SC"),
+      "Nashville SC")
 check("AFC Bournemouth is just Bournemouth",
       sitebuild.club_name("AFC Bournemouth"), "Bournemouth")
 # A LEADING FC is part of the name, unlike a trailing one.
 check("FC Dallas keeps its FC", sitebuild.club_name("FC Dallas"), "FC Dallas")
+# Stripping must never leave a bare city name.
+check("Charlotte FC keeps its FC", sitebuild.club_name("Charlotte FC"),
+      "Charlotte FC")
+check("Toronto FC keeps its FC", sitebuild.club_name("Toronto FC"),
+      "Toronto FC")
+check("three words can afford to lose the FC",
+      sitebuild.club_name("San Diego FC"), "San Diego")
 check("accents are stripped", sitebuild.plain_text("Montréal"), "Montreal")
 check("college splits into school and nickname",
       sitebuild.college_parts({"team": "Michigan Wolverines",
