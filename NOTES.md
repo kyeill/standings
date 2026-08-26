@@ -105,6 +105,12 @@ Hockey-Reference and MLB by its own standings payload, so every one of the Big
 4 does have odds; the gaps are college basketball, college hockey and soccer,
 and for the first two a selection metric stands in.
 
+**A local build will not byte-match the live one, and that is fine.** `cache/`
+holds ESPN responses for up to three hours, so a local `site.py` can render
+older standings than the workflow just fetched -- on 2026-08-26 the live page
+had the Tigers at 62-70 while the local copy still said 61-70. Compare the CSS
+and the structure, not the bytes, before concluding something is broken.
+
 ## Carried over from sports-daily
 
 Same ESPN quirks apply and are already handled here: do not set a browser-style
