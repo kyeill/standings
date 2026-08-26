@@ -189,6 +189,15 @@ check("no tracker table has an odds column any more",
       all(sec.get("column") is None for sec in tc["sections"]), True)
 check("the wild-card label is capitalised",
       tc["sections"][1]["label"], "Wild Card Race")
+# The Cavaliers share the Pistons' conference table, so their card is never
+# drawn -- their odds have to be moved onto the table that is.
+nbag = next(t for t in leagues.TABS if t["key"] == "nba")["groups"][0]
+nba_cards = build.tracker(nbag, datetime.date.today(), record=False)
+drawn = next(c for c in nba_cards if c["show_table"])
+teams_noted = {r["team"] for sec in drawn["sections"] for r in sec["rows"]
+               if r.get("odds_note") is not None}
+check("both tracked NBA teams show odds on the one table",
+      teams_noted, {"Detroit Pistons", "Cleveland Cavaliers"})
 
 print("\nend to end  [LIVE]")
 data = build.build_all(include_offseason=False)

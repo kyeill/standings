@@ -84,6 +84,10 @@ section.on{display:block}
 table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;
       margin-top:11px;table-layout:fixed}
 th:not(:first-child),td:not(:first-child){width:58px}
+/* Indent the first column so the shaded row starts clear of the crest rather
+   than butting straight up against it. */
+th:first-child,td:first-child{padding-left:8px}
+td:last-child,th:last-child{padding-right:6px}
 td:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 th{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;
    color:var(--muted);font-weight:600;text-align:right;padding:0 0 5px}
@@ -94,7 +98,7 @@ td:first-child{text-align:left}
    old 3px inset bar sat on top of the crest, which is why it looked like it
    was running over the logo. */
 tr.mine td{background:var(--tintbg,rgba(255,255,255,.05));font-weight:600}
-tr.belowcut td{border-top:2px dashed var(--cut)}
+tr.belowcut td{border-top:1px dashed var(--cut)}
 tr.skip td{color:var(--muted);font-size:12px;padding:2px 0}
 .logo{width:16px;height:16px;vertical-align:middle;margin-right:6px}
 .nm{vertical-align:middle}
@@ -132,6 +136,8 @@ footer{margin-top:34px;color:var(--muted);font-size:12px;
   th{font-size:11.5px}
   td{font-size:15px;padding:6px 0}
   th:not(:first-child),td:not(:first-child){width:82px}
+  th:first-child,td:first-child{padding-left:11px}
+  td:last-child,th:last-child{padding-right:8px}
   .logo{width:19px;height:19px;margin-right:8px}
   .rk{font-size:12.5px}
   tr.skip td{font-size:13px}
@@ -328,12 +334,7 @@ def odds_note(row):
     pct = row.get("odds_note")
     if pct is None:
         return ""
-    delta = row.get("odds_note_delta")
-    move = ""
-    if delta is not None and abs(delta) >= 0.5:
-        move = ' <span class="delta %s">%s%.0f</span>' % (
-            "up" if delta > 0 else "down", "+" if delta > 0 else "-", abs(delta))
-    return ' <span class="oddsnote">(%.0f%%%s)</span>' % (pct, move)
+    return ' <span class="oddsnote">(%.0f%%)</span>' % pct
 
 
 def record_of(row, unit):
@@ -379,9 +380,7 @@ def table_block(t):
         body.append('<tr class="%s" style="--tintbg:#%s"><td>%s</td>%s</tr>' % (
             klass, row_shade(r["team"]), name, cells))
     # Say so when the numbers are computed rather than published.
-    note = ('<div class="sub">computed from game results &mdash; ESPN publishes '
-            "no college hockey standings. Rank shown is the NCAA&rsquo;s NPI, "
-            'which decides tournament selection.</div>') if t.get("derived") else ""
+    note = ""
     return ('<div class="card"><div class="who">%s</div>%s<table>%s%s</table></div>'
             % (esc(t["label"]), note, cols, "".join(body)))
 

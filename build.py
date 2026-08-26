@@ -135,15 +135,38 @@ def tracker(group, today, record=True):
     # Two tracked teams in one conference (the Pistons and the Cavaliers) share
     # a ladder, so only the first card draws it; the rest are highlighted
     # inside that one table instead of repeating it.
-    seen = set()
+    shown = {}
     for c in cards:
         if c.get("missing"):
             continue
         # Two tracked teams in one conference share a ladder; only the first
         # card draws the tables.
-        c["show_table"] = c["ladder_name"] not in seen
-        seen.add(c["ladder_name"])
+        first = shown.get(c["ladder_name"])
+        c["show_table"] = first is None
+        if first is None:
+            shown[c["ladder_name"]] = c
+        else:
+            # This card will not be rendered, so its odds would be lost. Move
+            # the annotation onto the table that IS drawn -- otherwise the
+            # Cavaliers' number simply never appears anywhere.
+            _adopt_note(first, c)
     return cards
+
+
+def _adopt_note(target, hidden):
+    """Copy a hidden card's odds annotation onto the card that gets drawn."""
+    for sec in hidden["sections"]:
+        for row in sec["rows"]:
+            if row.get("odds_note") is None:
+                continue
+            for other in target["sections"]:
+                if other["kind"] != sec["kind"]:
+                    continue
+                for dest in other["rows"]:
+                    if dest["team"] == row["team"]:
+                        dest["odds_note"] = row["odds_note"]
+                        dest["odds_note_delta"] = row.get("odds_note_delta")
+            return
 
 
 def _sections(group, me, div_rows, pool, unit, odds_table=None):
