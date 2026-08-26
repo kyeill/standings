@@ -6,7 +6,7 @@ nothing from it and touches none of its files. See `NOTES.md` for the trap
 list and what each sport's data can actually support.
 
 ```
-python site.py           build the app into output/site/  (in-season sports only)
+python site.py           build into output/site/  (in-season sports only)
 python site.py --all     same, but keep every sport, for testing
 python build.py          print what each tab resolved to, no HTML
 python mock.py           the three original design mockups
@@ -48,17 +48,24 @@ points behind for hockey and soccer. Comparing overall records instead would
 number three 15-5 Big Ten teams 2, 3 and 4. Soccer counts as tied on POINTS
 even though goal difference decides the order.
 
-    tracker   # | Team | Record | GB
-    hockey    # | Team | Points | PB      points, not games, and no "pts" suffix
-    college   # | Team | Conf | Overall | GB | <metric>
-    hockey    # | Team | Conf | GB | NPI        no overall record at all
-    soccer    # | Team | P | W-D-L | GD | Pts
+    NFL MLB   # | Team | Record | GB
+    NBA       # | Team | Record | GB
+    NHL       # | Team | Points | PB     points, no "pts" suffix
+    CFB CBB   # | Team | Conf | Overall | GB | <metric>
+    HKY       # | Team | Conf | GB | NPI  no overall record, at any size
+    EPL MLS   # | Team | P | W-D-L | GD | Pts
 
-The metric column -- CFP odds, projected NCAA seed, or NPI -- sits at the very
-end. **Under 640px one column steps aside**: the overall record on college, and
-W-D-L on soccer. College hockey drops its overall record at every size
-(`drop_overall`), since NPI already says how good the team is nationally. Six columns left the team name 47px on a 375px phone, which
-truncated most of it; with one gone and the rest tightened it is 143px. The index is centred in its own narrow column with padding either side.
+The metric column -- CFP odds, projected NCAA seed (header "Seed"), or NPI --
+sits at the very end.
+
+**Under 640px one column steps aside**: Overall on college, W-D-L on soccer,
+and the index and numeric columns tighten. Six columns had left the team name
+47px on a 375px phone, truncating most of it; it is now 143px. Desktop keeps
+every column. College hockey is the exception that needs no breakpoint: it
+drops Overall at every size (`drop_overall`), because NPI already says how good
+the team is nationally.
+
+As a rule of thumb a phone fits about four columns besides the team name.
 
 A poll rank renders as a **suffix**, "Oregon (#2)". As a prefix its variable
 width ("1" against "14") started every team name at a different x position, so
