@@ -10,7 +10,8 @@ python site.py           build into output/site/  (in-season sports only)
 python site.py --all     same, but keep every sport, for testing
 python build.py          print what each tab resolved to, no HTML
 python mock.py           the three original design mockups
-python selftest.py       check the back end (69 assertions)
+python logos.py --write  re-measure which crest variant reads (rarely)
+python selftest.py       check the back end (74 assertions)
 ```
 
 Python is not on PATH:
@@ -66,6 +67,18 @@ drops Overall at every size (`drop_overall`), because NPI already says how good
 the team is nationally.
 
 As a rule of thumb a phone fits about four columns besides the team name.
+
+## Crests
+
+ESPN publishes two variants per team and the `-dark` one is usually right on a
+dark page -- but for some clubs it is a flat white silhouette, so Liverpool and
+Tottenham become indistinguishable at 19px. `logos.py` measures the actual
+pixels of both and picks per team, exactly as sports-daily does: the dark
+variant when it carries colour, otherwise the default if it is light enough,
+otherwise the dark one anyway. The 15 exceptions live in `logo-overrides.json`,
+which the build just reads -- re-run `python logos.py --write` when the tracked
+teams change. The default variant is always the `onerror` fallback, since a few
+teams have no dark file at all.
 
 A poll rank renders as a **suffix**, "Oregon (#2)". As a prefix its variable
 width ("1" against "14") started every team name at a different x position, so

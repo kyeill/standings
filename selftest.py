@@ -216,6 +216,27 @@ check("a points sport prints no unit in the cell",
       sitebuild.record_of({"points": 113, "record": "53-22-7"}, leagues.POINTS),
       "113")
 
+print("\ncrest variants")
+import json as _json
+try:
+    with open("logo-overrides.json", encoding="utf-8") as fh:
+        overrides = _json.load(fh)
+except OSError:
+    overrides = {}
+check("the measured override list exists", len(overrides) > 0, True)
+# ESPN's -dark crest is a flat white silhouette for these, so they keep the
+# default variant. Regenerate with `python logos.py --write`.
+check("the Tigers keep their default crest",
+      "/500-dark/" in overrides.get("Detroit Tigers", "/500-dark/"), False)
+check("a team whose dark crest has colour is not overridden",
+      "Cleveland Guardians" in overrides, False)
+check("crest() honours an override",
+      "/500-dark/" in sitebuild.crest({"team": "Detroit Tigers",
+                                       "logo": "https://x/500/det.png"}), False)
+check("crest() uses the dark variant otherwise",
+      "/500-dark/" in sitebuild.crest({"team": "Nobody",
+                                       "logo": "https://x/500/nob.png"}), True)
+
 print("\nend to end  [LIVE]")
 data = build.build_all(include_offseason=False)
 live = sorted(t["label"] for t in data["tabs"] if t["live"])

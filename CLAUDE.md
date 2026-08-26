@@ -12,7 +12,8 @@ published to <https://kyeill.github.io/standings/>. Nothing runs locally.
 python site.py           build the app into output/site/  (in-season only)
 python site.py --all     keep every sport, for working out of season
 python build.py          print what each tab resolved to, no HTML
-python selftest.py       69 assertions -- run before trusting any change
+python logos.py --write  re-measure crest variants when teams change
+python selftest.py       74 assertions -- run before trusting any change
 ```
 
 Python is not on PATH:

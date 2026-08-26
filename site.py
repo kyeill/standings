@@ -35,6 +35,21 @@ COLORS = {
     "Atlanta United FC": "80000a",
 }
 
+# Which crest variant reads on a dark page, measured by logos.py. ESPN's
+# -dark variant is right for most teams but is a flat white silhouette for
+# some (Liverpool and Tottenham are both pure white), so those keep the
+# default. Regenerate with `python logos.py --write` when teams change.
+def _load_overrides():
+    path = os.path.join(HERE, "logo-overrides.json")
+    try:
+        with open(path, encoding="utf-8") as fh:
+            return json.load(fh)
+    except (OSError, ValueError):
+        return {}
+
+
+LOGO_OVERRIDES = _load_overrides()
+
 FONT = ('<link rel="preconnect" href="https://fonts.googleapis.com">'
         '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
         '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?'
@@ -212,12 +227,21 @@ def esc(s):
     return html.escape(str(s if s is not None else ""))
 
 
-def crest(logo, cls="logo"):
+def crest(row, cls="logo"):
+    """The crest variant that actually reads on a dark page.
+
+    ESPN's -dark variant suits most teams, but for some it is a flat white
+    silhouette; logos.py measures both and records the exceptions. The default
+    variant is always the onerror fallback, since a few teams have no -dark
+    file at all.
+    """
+    logo = (row.get("logo") or "").replace("/500-dark/", "/500/")
     if not logo:
         return ""
-    dark = logo.replace("/500/", "/500-dark/")
+    src = (LOGO_OVERRIDES.get(row.get("team") or "")
+           or logo.replace("/500/", "/500-dark/"))
     return ('<img class="%s" src="%s" onerror="this.onerror=null;this.src=\'%s\'"'
-            ' alt="" loading="lazy">' % (cls, esc(dark), esc(logo)))
+            ' alt="" loading="lazy">' % (cls, esc(src), esc(logo)))
 
 
 CARD_BG = (0x1e, 0x1e, 0x23)
@@ -297,7 +321,7 @@ def section_table(sec, card):
                     '<td>%s<span class="nm">%s</span></td>'
                     '<td>%s</td><td>%s</td></tr>' % (
                         klass, row_shade(r["team"]), idx[i],
-                        crest(r["logo"]), esc(name_of(r)) + odds_note(r),
+                        crest(r), esc(name_of(r)) + odds_note(r),
                         esc(record_of(r, unit)), behind(r["gb"], unit)))
     points = unit == leagues.POINTS
     # Hockey is behind on POINTS, not games, and the column holds points, not
@@ -372,7 +396,7 @@ def table_block(t):
         # versus "14") pushed every team name to a different x position.
         rank = ('<span class="rk"> (#%s)</span>' % r["poll"]) if r.get("poll") else ""
         name = '%s<span class="nm">%s</span>%s' % (
-            crest(r["logo"]), esc(name_of(r, plain=college)), rank)
+            crest(r), esc(name_of(r, plain=college)), rank)
         cell = "<td>%s</td>" % extra_value(r.get("extra"), spec) if spec else ""
         if college:
             # college hockey has ties, so print the record string as given
