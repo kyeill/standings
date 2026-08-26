@@ -17,10 +17,10 @@ python model.py    -> a one-line summary per tracked team, for sanity checks
 | MLB | yes, division of 5 | yes, 6 seeds | **yes — in the standings payload itself** |
 | NFL | yes, division of 4 | yes, 7 seeds | yes, ESPN FPI |
 | NBA | yes, division of 5 | yes, 10 seeds incl. play-in | yes, ESPN BPI |
-| NHL | yes, division of 8 | yes, 8 seeds, **points** | **no** |
-| College football | conference table only | no | FPI, **in season only** |
-| College basketball | conference table only | no | no |
-| College hockey | **derived from games** | no | no |
+| NHL | yes, division of 8 | yes, 8 seeds, **points** | yes, **Hockey-Reference** |
+| College football | conference table only | no | yes, ESPN FPI = CFP odds |
+| College basketball | conference table only | no | no probability; **projected seed** |
+| College hockey | **derived from games** | no | no probability; **NPI** |
 | Premier League | yes, one table of 20 | the line is a choice | no |
 | MLS | yes, conference of 15 | yes, top 9 | no |
 
@@ -100,7 +100,10 @@ The comparison character has to come off before the number will parse, or the
 strongest teams silently show no odds.
 
 **NHL and MLB have no powerindex endpoint at all** — both 400. This matches
-what the daily tool already found.
+what the daily tool already found. The NHL is covered instead by
+Hockey-Reference and MLB by its own standings payload, so every one of the Big
+4 does have odds; the gaps are college basketball, college hockey and soccer,
+and for the first two a selection metric stands in.
 
 ## Carried over from sports-daily
 

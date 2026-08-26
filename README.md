@@ -41,15 +41,25 @@ layout so the numeric columns land in the same place on every tab.
 
 ## Tabs
 
-| Tab | Mode | Contents |
-|---|---|---|
-| NFL / MLB / NBA / NHL | tracker | Lions, Tigers, Pistons + Cavaliers, Red Wings |
-| College | table | Michigan and Cornell across football, basketball, hockey |
-| Tottenham | table | Premier League plus whichever European competition is running |
-| Atlanta | table | Atlanta United, MLS Eastern Conference |
+Nine, in this order -- his, given 2026-08-25. College splits by SPORT rather
+than by school, so Michigan and Cornell sit together on each college tab.
 
-Two tracked teams in one conference (the Pistons and the Cavaliers) share a
-single ladder rather than printing it twice.
+| Tab | Mode | Contents | Metric column |
+|---|---|---|---|
+| CFB | table | Big Ten (Michigan) + Ivy League (Cornell) | CFP odds |
+| CBB | table | Big Ten (Michigan) + Ivy League (Cornell) | projected NCAA seed |
+| HKY | table | Big Ten (Michigan) + ECAC (Cornell), derived | NPI |
+| EPL | table | Premier League + whichever European competition is in its league phase | -- |
+| NFL | tracker | Lions: NFC North, then the Wild Card Race | -- |
+| MLB | tracker | Tigers: AL Central, then the Wild Card Race | -- |
+| NBA | tracker | Pistons + Cavaliers: Eastern Conference | -- |
+| NHL | tracker | Red Wings: Eastern Conference | -- |
+| MLS | table | Atlanta United, Eastern Conference | -- |
+
+HKY is COLLEGE hockey; the NHL has its own tab. Two tracked teams in one
+conference (the Pistons and the Cavaliers) share a single ladder rather than
+printing it twice -- and because only the first card is drawn, the second
+team's odds are moved onto the table that IS drawn, or they would vanish.
 
 ## Only what is actually on
 
