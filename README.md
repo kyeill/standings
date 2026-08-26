@@ -11,7 +11,7 @@ python site.py --all     same, but keep every sport, for testing
 python build.py          print what each tab resolved to, no HTML
 python mock.py           the three original design mockups
 python logos.py --write  re-measure which crest variant reads (rarely)
-python selftest.py       check the back end (79 assertions)
+python selftest.py       check the back end (86 assertions)
 ```
 
 Python is not on PATH:
@@ -64,7 +64,8 @@ Games behind always carries one decimal, so 7 and 2.5 line up as 7.0 and 2.5
 down the column. Points behind stays whole: hockey deals in whole points and
 "17.0" would be inventing precision.
 
-**Under 640px one column steps aside**: Overall on college, W-D-L on soccer,
+**Under 640px columns step aside**: Overall on college, W-D-L and GD on
+soccer (a phone league table is P and Pts), and the college nickname,
 and the index and numeric columns tighten. Six columns had left the team name
 47px on a 375px phone, truncating most of it; it is now 143px. Desktop keeps
 every column. College hockey is the exception that needs no breakpoint: it
@@ -84,6 +85,18 @@ otherwise the dark one anyway. The 15 exceptions live in `logo-overrides.json`,
 which the build just reads -- re-run `python logos.py --write` when the tracked
 teams change. The default variant is always the `onerror` fallback, since a few
 teams have no dark file at all.
+
+## Team names
+
+Soccer clubs follow sports-daily's rule: a trailing FC, CF or SC is dropped,
+because it says nothing on a page where every club is a football club and it
+costs width where there is least of it. "AFC Bournemouth" is just Bournemouth.
+A **leading** "FC Dallas" keeps its FC, where the letters are part of the name.
+Accents are stripped the same way.
+
+College is the other way round -- the school alone is too bare, so the tables
+read "Michigan Wolverines". The nickname is its own span and is the first
+thing to go under 640px, leaving "Michigan" on a phone.
 
 A poll rank renders as a **suffix**, "Oregon (#2)". As a prefix its variable
 width ("1" against "14") started every team name at a different x position, so

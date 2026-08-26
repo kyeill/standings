@@ -13,6 +13,7 @@ import html
 import json
 import os
 import sys
+import unicodedata
 
 import build
 import fetch
@@ -111,6 +112,7 @@ tr.belowcut td{border-top:1px dashed var(--cut)}
 .nm{vertical-align:middle}
 .rk{color:var(--cut);font-weight:400}
 .oddsnote{color:var(--muted);font-weight:400}
+.nick{}
 .muted{color:var(--muted)}
 .note{color:var(--muted);font-size:13px;margin:9px 0;padding:9px 11px;
       border:1px dashed var(--line);border-radius:9px}
@@ -339,9 +341,54 @@ def section_table(sec, card):
             '%s</table>' % (rec_head, gap_head, "".join(body)))
 
 
+# Letters that carry their sound in the glyph rather than in a mark, so NFKD
+# leaves them alone and they need naming. Same list as sports-daily.
+_LETTERS = {"ø": "o", "Ø": "O", "æ": "ae", "Æ": "AE",
+            "đ": "d", "Đ": "D", "ł": "l", "Ł": "L",
+            "ß": "ss", "œ": "oe", "Œ": "OE",
+            "þ": "th", "Þ": "Th", "ð": "d", "Ð": "D"}
+
+
+def plain_text(text):
+    """Accents stripped: Atletico, Malmo. Mirrors sports-daily."""
+    for letter, flat in _LETTERS.items():
+        text = text.replace(letter, flat)
+    return "".join(c for c in unicodedata.normalize("NFKD", text)
+                   if not unicodedata.combining(c))
+
+
+def club_name(name):
+    """A soccer club as people say it, mirroring sports-daily.
+
+    A trailing FC, CF or SC says nothing on a page where every club is a
+    football club, and it costs width where there is least of it. "AFC
+    Bournemouth" is just Bournemouth. A LEADING "FC Dallas" keeps its FC,
+    because there the letters are part of the name.
+    """
+    parts = plain_text(name or "").split()
+    if len(parts) > 1 and parts[-1] in ("FC", "CF", "SC"):
+        parts = parts[:-1]
+    if len(parts) > 1 and parts[0] == "AFC":
+        parts = parts[1:]
+    return " ".join(parts)
+
+
+def college_parts(row):
+    """(school, nickname) -- "Michigan" and " Wolverines".
+
+    The nickname is worth showing where there is room and is the first thing
+    to go on a phone, so it is rendered as its own span.
+    """
+    full = row.get("team") or ""
+    school = row.get("location") or ""
+    if school and full.startswith(school) and len(full) > len(school):
+        return school, full[len(school):]
+    return full, ""
+
+
 def name_of(row, plain=False):
-    """College reads better without the mascot -- "Michigan", not "Michigan
-    Wolverines" -- and ESPN's `location` is exactly that."""
+    """The name to print. College keeps its school only here; the nickname is
+    added separately so it can be dropped on a narrow screen."""
     if plain and row.get("location"):
         return row["location"]
     return row.get("team") or ""
@@ -393,17 +440,25 @@ def table_block(t):
         cols = ('<tr><th>#</th><th>Team</th><th>Conf</th>%s<th>GB</th>%s</tr>'
                 % (overall_head, extra_head))
     else:
+        # On a phone a league table is P and Pts; W-D-L and GD step aside so
+        # the longest club name ("New England Revolution") still fits.
         cols = ('<tr><th>#</th><th>Team</th><th>P</th>'
-                '<th class="hide-sm">W-D-L</th><th>GD</th><th>Pts</th>%s</tr>'
-                % extra_head)
+                '<th class="hide-sm">W-D-L</th><th class="hide-sm">GD</th>'
+                '<th>Pts</th>%s</tr>' % extra_head)
     idx = index_cells(t["rows"])
     body = []
     for i, r in enumerate(t["rows"]):
         # The rank goes AFTER the name. As a prefix its variable width ("1"
         # versus "14") pushed every team name to a different x position.
         rank = ('<span class="rk"> (#%s)</span>' % r["poll"]) if r.get("poll") else ""
-        name = '%s<span class="nm">%s</span>%s' % (
-            crest(r), esc(name_of(r, plain=college)), rank)
+        if college:
+            school, nick = college_parts(r)
+            label = '<span class="nm">%s</span>%s' % (
+                esc(school),
+                '<span class="nick hide-sm">%s</span>' % esc(nick) if nick else "")
+        else:
+            label = '<span class="nm">%s</span>' % esc(club_name(r["team"]))
+        name = "%s%s%s" % (crest(r), label, rank)
         cell = "<td>%s</td>" % extra_value(r.get("extra"), spec) if spec else ""
         if college:
             # college hockey has ties, so print the record string as given
@@ -415,7 +470,7 @@ def table_block(t):
                 esc(conf), overall, behind(r["gb"], unit), cell)
         else:
             cells = ('<td class="muted">%s</td><td class="muted hide-sm">%s</td>'
-                     '<td class="muted">%s</td><td>%s</td>' % (
+                     '<td class="muted hide-sm">%s</td><td>%s</td>' % (
                          r["gp"] if r["gp"] is not None else "-",
                          esc(r["record"]), goal_diff(r), r["points"])) + cell
         klass = " ".join(x for x in ["mine" if r["mine"] else "",

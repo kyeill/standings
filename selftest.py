@@ -228,6 +228,24 @@ check("ahead of the cut line reads with a plus and a decimal",
 check("level still reads as a dash",
       "-" in sitebuild.behind(0.0, leagues.GAMES), True)
 
+print("\nteam names")
+check("a trailing FC is dropped", sitebuild.club_name("Atlanta United FC"),
+      "Atlanta United")
+check("a trailing CF is dropped", sitebuild.club_name("Inter Miami CF"),
+      "Inter Miami")
+check("AFC Bournemouth is just Bournemouth",
+      sitebuild.club_name("AFC Bournemouth"), "Bournemouth")
+# A LEADING FC is part of the name, unlike a trailing one.
+check("FC Dallas keeps its FC", sitebuild.club_name("FC Dallas"), "FC Dallas")
+check("accents are stripped", sitebuild.plain_text("Montréal"), "Montreal")
+check("college splits into school and nickname",
+      sitebuild.college_parts({"team": "Michigan Wolverines",
+                               "location": "Michigan"}),
+      ("Michigan", " Wolverines"))
+check("a team whose name is just the school has no nickname",
+      sitebuild.college_parts({"team": "Michigan", "location": "Michigan"}),
+      ("Michigan", ""))
+
 print("\ncrest variants")
 import json as _json
 try:
