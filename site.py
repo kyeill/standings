@@ -85,7 +85,6 @@ td:nth-child(2){overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 td:last-child,th:last-child{padding-right:6px}
 th{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;
    color:var(--muted);font-weight:600;text-align:right;padding:0 0 5px}
-
 td{padding:4px 0;border-top:1px solid var(--line);text-align:right;font-size:13.5px}
 
 /* The row is shaded in a lightened version of the team's own colour. The
@@ -130,7 +129,7 @@ footer{margin-top:34px;color:var(--muted);font-size:12px;
   .card{padding:15px 17px;margin:13px 0;border-radius:11px}
   .who{font-size:19px;gap:10px}
   .who img{width:25px;height:25px}
-          table{margin-top:13px}
+  table{margin-top:13px}
   th{font-size:11.5px}
   td{font-size:15px;padding:6px 0}
   th:first-child,td:first-child{width:48px;padding:6px 5px 6px 8px}
@@ -358,9 +357,10 @@ def table_block(t):
     unit, college = t["unit"], t["basis"] == "conference"
     spec = t.get("column")
     extra_head = "<th>%s</th>" % esc(spec["label"]) if spec else ""
+    overall_head = "" if t.get("drop_overall") else '<th class="hide-sm">Overall</th>'
     if college:
-        cols = ('<tr><th>#</th><th>Team</th><th>Conf</th>'
-                '<th class="hide-sm">Overall</th><th>GB</th>%s</tr>' % extra_head)
+        cols = ('<tr><th>#</th><th>Team</th><th>Conf</th>%s<th>GB</th>%s</tr>'
+                % (overall_head, extra_head))
     else:
         cols = ('<tr><th>#</th><th>Team</th><th>P</th>'
                 '<th class="hide-sm">W-D-L</th><th>GD</th><th>Pts</th>%s</tr>'
@@ -378,9 +378,10 @@ def table_block(t):
             # college hockey has ties, so print the record string as given
             # rather than rebuilding it from wins and losses alone
             conf = r.get("conf_record") or "%s-%s" % (r["wins"], r["losses"])
-            cells = ('<td>%s</td><td class="muted hide-sm">%s</td>'
-                     '<td>%s</td>%s' % (
-                         esc(conf), esc(r["record"]), behind(r["gb"], unit), cell))
+            overall = ("" if t.get("drop_overall")
+                       else '<td class="muted hide-sm">%s</td>' % esc(r["record"]))
+            cells = '<td>%s</td>%s<td>%s</td>%s' % (
+                esc(conf), overall, behind(r["gb"], unit), cell)
         else:
             cells = ('<td class="muted">%s</td><td class="muted hide-sm">%s</td>'
                      '<td class="muted">%s</td><td>%s</td>' % (

@@ -65,10 +65,16 @@ TABS = [
             {"key": "chockey-b10", "path": "hockey/mens-college-hockey",
              "label": "Big Ten", "teams": [MICHIGAN],
              "basis": "conference", "unit": GAMES, "derived": True,
+             # NPI already says how good the team is nationally, so the overall
+             # record is the one column this tab can spare.
+             "drop_overall": True,
              "column": {"source": "npi", "label": "NPI", "fmt": "int"}},
             {"key": "chockey-ecac", "path": "hockey/mens-college-hockey",
              "label": "ECAC", "teams": [CORNELL],
              "basis": "conference", "unit": GAMES, "derived": True,
+             # NPI already says how good the team is nationally, so the overall
+             # record is the one column this tab can spare.
+             "drop_overall": True,
              "column": {"source": "npi", "label": "NPI", "fmt": "int"}},
         ],
     },

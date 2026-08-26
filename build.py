@@ -334,6 +334,7 @@ def table(group, today):
         "unit": unit, "basis": basis, "line": group.get("line"),
         "odds": tab_odds,
         "column": spec,
+        "drop_overall": bool(group.get("drop_overall")),
         "derived": bool(group.get("derived")),
         "line_label": group.get("line_label"), "rows": out_rows,
         "extra_teams": others,

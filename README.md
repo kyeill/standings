@@ -51,11 +51,13 @@ even though goal difference decides the order.
     tracker   # | Team | Record | GB
     hockey    # | Team | Points | PB      points, not games, and no "pts" suffix
     college   # | Team | Conf | Overall | GB | <metric>
+    hockey    # | Team | Conf | GB | NPI        no overall record at all
     soccer    # | Team | P | W-D-L | GD | Pts
 
 The metric column -- CFP odds, projected NCAA seed, or NPI -- sits at the very
 end. **Under 640px one column steps aside**: the overall record on college, and
-W-D-L on soccer. Six columns left the team name 47px on a 375px phone, which
+W-D-L on soccer. College hockey drops its overall record at every size
+(`drop_overall`), since NPI already says how good the team is nationally. Six columns left the team name 47px on a 375px phone, which
 truncated most of it; with one gone and the rest tightened it is 143px. The index is centred in its own narrow column with padding either side.
 
 A poll rank renders as a **suffix**, "Oregon (#2)". As a prefix its variable
