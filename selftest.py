@@ -168,6 +168,19 @@ cbb = build.table(next(t for t in leagues.TABS if t["key"] == "cbb")["groups"][0
 check("a team outside the BPI top 50 is blank, not zero",
       any(r["extra"] is None for r in cbb["rows"]), True)
 
+print("\ntracker odds column")
+mlbg = next(t for t in leagues.TABS if t["key"] == "mlb")["groups"][0]
+tc = build.tracker(mlbg, datetime.date.today(), record=False)[0]
+for sec in tc["sections"]:
+    check("%s section carries an odds column" % sec["kind"],
+          (sec.get("column") or {}).get("label"), "Odds")
+    check("%s odds populated for every team" % sec["kind"],
+          all(r["extra"] is not None for r in sec["rows"]), True)
+# ESPN writes a near certainty as ">99.9%", which does not parse as a number
+# and silently blanked the strongest teams.
+check("a '>99.9%' team still gets a number",
+      any(r["extra"] and r["extra"] > 99 for r in tc["sections"][1]["rows"]), True)
+
 print("\nend to end  [LIVE]")
 data = build.build_all(include_offseason=False)
 live = sorted(t["label"] for t in data["tabs"] if t["live"])

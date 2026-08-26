@@ -26,7 +26,11 @@ def _odds_for(group, rows):
     if key == "mlb":
         out = {}
         for r in rows:
-            raw = (r["stats"].get("playoffPercent") or "").replace("%", "")
+            # ESPN writes a near-certainty as ">99.9%" and a long shot as
+            # "<0.1%", so the comparison character has to come off before the
+            # number will parse -- otherwise the best teams show no odds.
+            raw = (r["stats"].get("playoffPercent") or "")
+            raw = raw.replace("%", "").replace(">", "").replace("<", "").strip()
             value = model.num(raw)
             if value is not None:
                 out[r["team"]] = value
@@ -85,7 +89,7 @@ def tracker(group, today, record=True):
             div = {"name": me["division"], "rank": rank, "of": len(peers),
                    "gap": behind}
 
-        sections = _sections(group, me, div_rows, pool, unit)
+        sections = _sections(group, me, div_rows, pool, unit, odds_table)
         # The verdict at the top of the card answers the question the sport
         # actually poses: a division leader is not in the wild-card race, so
         # reporting a wild-card gap for them would be nonsense.
@@ -128,7 +132,7 @@ def tracker(group, today, record=True):
     return cards
 
 
-def _sections(group, me, div_rows, pool, unit):
+def _sections(group, me, div_rows, pool, unit, odds_table=None):
     """The tables a tracker card shows, per the league's `sections`.
 
     division  my division, everyone in it, games behind the leader
@@ -139,6 +143,10 @@ def _sections(group, me, div_rows, pool, unit):
     """
     tracked = group["teams"]
     wanted = group.get("sections") or ["conference"]
+    # Odds go in a column, the same way the college tabs carry CFP odds, NPI
+    # and projected seed -- so every sport reads the same and the card needs
+    # no header explaining itself.
+    column = {"label": "Odds", "fmt": "pct"} if odds_table else None
     out = []
 
     for kind in wanted:
@@ -151,7 +159,8 @@ def _sections(group, me, div_rows, pool, unit):
                 "kind": "division", "label": me["division"], "cut": None,
                 "cut_label": None,
                 "gap": model.gap(me["stats"], peers[0]["stats"], unit),
-                "rows": rows_for(peers, me, unit, tracked),
+                "column": column,
+                "rows": _with_odds(rows_for(peers, me, unit, tracked), odds_table),
             })
         elif kind == "wildcard":
             leaders = set()
@@ -181,16 +190,24 @@ def _sections(group, me, div_rows, pool, unit):
             out.append({
                 "kind": "wildcard", "label": "Wild card race", "cut": spots,
                 "cut_label": group["spots_label"], "gap": gap,
-                "from_cut": True,
-                "rows": rows_for(chase, me, unit, tracked, leader=line),
+                "from_cut": True, "column": column,
+                "rows": _with_odds(rows_for(chase, me, unit, tracked, leader=line),
+                                   odds_table),
             })
         else:
             out.append({
                 "kind": "conference", "label": group["label"],
                 "cut": group["spots"], "cut_label": group["spots_label"],
-                "gap": None, "rows": rows_for(pool, me, unit, tracked),
+                "gap": None, "column": column,
+                "rows": _with_odds(rows_for(pool, me, unit, tracked), odds_table),
             })
     return out
+
+
+def _with_odds(rows, odds_table):
+    for row in rows:
+        row["extra"] = (odds_table or {}).get(row["team"])
+    return rows
 
 
 def rows_for(pool, me, unit, tracked, leader=None):

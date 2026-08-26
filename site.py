@@ -82,9 +82,10 @@ th{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;
 th:first-child{text-align:left}
 td{padding:4px 0;border-top:1px solid var(--line);text-align:right;font-size:13.5px}
 td:first-child{text-align:left}
-tr.mine td{background:rgba(255,255,255,.05);font-weight:600}
-tr.mine td:first-child{box-shadow:inset 3px 0 0 var(--tint,var(--accent))}
-tr.mine td:first-child .nm{padding-left:7px}
+/* The row is shaded in a lightened version of the team's own colour. The
+   old 3px inset bar sat on top of the crest, which is why it looked like it
+   was running over the logo. */
+tr.mine td{background:var(--tintbg,rgba(255,255,255,.05));font-weight:600}
 tr.belowcut td{border-top:2px dashed var(--cut)}
 tr.skip td{color:var(--muted);font-size:12px;padding:2px 0}
 .logo{width:16px;height:16px;vertical-align:middle;margin-right:6px}
@@ -207,8 +208,27 @@ def crest(logo, cls="logo"):
             ' alt="" loading="lazy">' % (cls, esc(dark), esc(logo)))
 
 
+CARD_BG = (0x1e, 0x1e, 0x23)
+
+
 def tint(team):
     return COLORS.get(team, "e0834f")
+
+
+def row_shade(team, lighten=0.42, strength=0.34):
+    """A readable wash of the team's colour over the card background.
+
+    Done here rather than with CSS color-mix so the result is a plain hex that
+    renders the same everywhere. The colour is first lightened towards white --
+    Tottenham navy and Cornell red are otherwise too dark to register against
+    a #1e1e23 card -- then laid over the card at partial strength so the text
+    on top stays readable.
+    """
+    raw = tint(team)
+    r, g, b = (int(raw[i:i + 2], 16) for i in (0, 2, 4))
+    r, g, b = (int(c + (255 - c) * lighten) for c in (r, g, b))
+    out = tuple(int(bg + (c - bg) * strength) for bg, c in zip(CARD_BG, (r, g, b)))
+    return "%02x%02x%02x" % out
 
 
 def unit_word(unit):
@@ -239,68 +259,37 @@ def window_rows(n, spots, mine_at):
 
 
 def tracker_card(card):
+    """A tracker tab reads exactly like a table tab: a heading per table and
+    nothing else. The team is not named -- the tab already says which sport,
+    and the shaded row says which team. Odds live in a column, so no header is
+    needed to carry them."""
     if card.get("missing"):
-        return '<div class="note">%s -- %s</div>' % (esc(card["team"]),
-                                                     esc(card["missing"]))
-    unit, spots = card["unit"], card["spots"]
-    inside = card["cut"] is not None and card["cut"] <= 0
-    clinched = card["clincher"] in ("z", "y", "x", "*")
-    eliminated = card["clincher"] == "e"
+        return '<div class="note">%s &mdash; %s</div>' % (esc(card["team"]),
+                                                          esc(card["missing"]))
+    if not card.get("show_table", True):
+        return ""
+    out = []
+    for i, sec in enumerate(card.get("sections") or []):
+        note = trend_line(card) if i == 0 else ""
+        out.append('<div class="card"><div class="who">%s</div>%s%s</div>'
+                   % (esc(sec["label"]), note, section_table(sec, card)))
+    return "".join(out)
 
-    if eliminated:
-        verdict, cls = "Eliminated", "out"
-    elif clinched:
-        verdict, cls = "Clinched", "in"
-    elif card["cut"] is None:
-        verdict, cls = "-", ""
-    elif card.get("leads_division"):
-        # Leading on a tiebreak with an identical record is a real state, and
-        # "0 ahead" is a silly way to say it.
-        verdict, cls = (("Tied", "in") if abs(card["cut"] or 0) < 0.01
-                        else ("%s ahead" % fmt(card["cut"], unit), "in"))
-    elif inside:
-        verdict, cls = "%s clear" % fmt(card["cut"], unit), "in"
+
+def trend_line(card):
+    """The one thing a column cannot show: which way the odds have moved."""
+    if card["odds"] is None:
+        return ""
+    delta = card["odds_delta"]
+    if delta is None:
+        move = "no reading a week ago yet"
+    elif abs(delta) < 0.05:
+        move = "level with a week ago"
     else:
-        verdict, cls = "%s back" % fmt(card["cut"], unit), "out"
-
-    odds_bit = ""
-    if card["odds"] is not None:
-        delta = card["odds_delta"]
-        if delta is None:
-            move = '<span class="delta">no reading a week ago yet</span>'
-        elif abs(delta) < 0.05:
-            move = '<span class="delta">level with a week ago</span>'
-        else:
-            move = ('<span class="delta %s">%s%.0f pts vs a week ago</span>'
-                    % ("up" if delta > 0 else "down",
-                       "+" if delta > 0 else "-", abs(delta)))
-        odds_bit = ('<div class="verdict"><span class="big">%.0f%%</span>'
-                    '<span class="gapline">to make the playoffs</span>%s</div>'
-                    % (card["odds"], move))
-
-    div = card.get("division")
-    sub = []
-    if div:
-        sub.append("%s in the %s" % (ordinal(div["rank"]), esc(short_name(div["name"]))))
-        if div["gap"] is not None and abs(div["gap"]) > 0.01:
-            sub.append(("%s back" % fmt(div["gap"], unit)) if div["gap"] > 0
-                       else ("%s ahead" % fmt(div["gap"], unit)))
-    if card["streak"]:
-        sub.append("%s, %s in last 10" % (esc(card["streak"]), esc(card["last10"] or "-")))
-
-    head = ('<div class="who">%s%s</div>'
-            '<div class="sub">%s &middot; %s seed of %s &middot; %s</div>' % (
-                crest(card["logo"], "logo"), esc(card["team"]),
-                esc(card["record"]), ordinal(card["seed"]), card["of"],
-                " &middot; ".join(sub) if sub else ""))
-    verdict_row = ('<div class="verdict"><span class="big %s">%s</span>'
-                   '<span class="gapline">%s</span></div>' % (
-                       cls, esc(verdict), esc(card.get("cut_label") or "")))
-
-    tables = ""
-    if card.get("show_table", True):
-        tables = "".join(section_table(s, card) for s in card.get("sections") or [])
-    return '<div class="card">%s%s%s%s</div>' % (head, verdict_row, odds_bit, tables)
+        move = '<span class="delta %s">%s%.0f since last week</span>' % (
+            "up" if delta > 0 else "down", "+" if delta > 0 else "-", abs(delta))
+    return '<div class="sub">%.0f%% to make the playoffs &middot; %s</div>' % (
+        card["odds"], move)
 
 
 def section_table(sec, card):
@@ -315,17 +304,21 @@ def section_table(sec, card):
         # caption row taking up a whole row's height to say what is obvious.
         klass = " ".join(x for x in ["mine" if r["mine"] else "",
                                      "belowcut" if cut and i == cut else ""] if x)
-        body.append('<tr class="%s" style="--tint:#%s"><td>%s<span class="nm">%s</span>'
-                    '</td><td class="muted">%s</td><td>%s</td><td>%s</td></tr>' % (
-                        klass, tint(r["team"]),
-                        crest(r["logo"]), esc(name_of(r)), i + 1,
+        cell = ("<td>%s</td>" % extra_value(r.get("extra"), sec["column"])
+                if sec.get("column") else "")
+        body.append('<tr class="%s" style="--tintbg:#%s">'
+                    '<td>%s<span class="nm">%s</span></td>%s'
+                    '<td class="muted">%s</td><td>%s</td><td>%s</td></tr>' % (
+                        klass, row_shade(r["team"]),
+                        crest(r["logo"]), esc(name_of(r)), cell, i + 1,
                         esc(record_of(r, unit)), behind(r["gb"], unit)))
     # Only the conference ladder is a real seeding; the numbers beside a
     # division or a wild-card field are just positions within that field.
     head = "Seed" if sec["kind"] == "conference" else "Pos"
     gap_head = "vs line" if sec.get("from_cut") else "GB"
-    return ('<table><tr><th>%s</th><th>%s</th><th>Record</th><th>%s</th></tr>%s</table>'
-            % (esc(sec["label"]), head, gap_head, "".join(body)))
+    extra_head = "<th>%s</th>" % esc(sec["column"]["label"]) if sec.get("column") else ""
+    return ('<table><tr><th>Team</th>%s<th>%s</th><th>Record</th><th>%s</th></tr>'
+            '%s</table>' % (extra_head, head, gap_head, "".join(body)))
 
 
 def name_of(row, plain=False):
@@ -376,8 +369,8 @@ def table_block(t):
         klass = " ".join(x for x in ["mine" if r["mine"] else "",
                                      "belowcut" if t["line"] and i == t["line"] else ""]
                          if x)
-        body.append('<tr class="%s" style="--tint:#%s"><td>%s</td>%s</tr>' % (
-            klass, tint(r["team"]), name, cells))
+        body.append('<tr class="%s" style="--tintbg:#%s"><td>%s</td>%s</tr>' % (
+            klass, row_shade(r["team"]), name, cells))
     # Say so when the numbers are computed rather than published.
     odds_line = ""
     if t.get("odds"):
