@@ -216,6 +216,18 @@ check("a points sport prints no unit in the cell",
       sitebuild.record_of({"points": 113, "record": "53-22-7"}, leagues.POINTS),
       "113")
 
+print("\ngap formatting")
+# Games behind always carries one decimal so the column lines up; points
+# behind stays whole, because hockey deals in whole points.
+check("a whole number of games gains a decimal",
+      sitebuild.fmt(7.0, leagues.GAMES), "7.0")
+check("a half game keeps its decimal", sitebuild.fmt(2.5, leagues.GAMES), "2.5")
+check("points behind stays whole", sitebuild.fmt(13.0, leagues.POINTS), "13")
+check("ahead of the cut line reads with a plus and a decimal",
+      "+9.0" in sitebuild.behind(-9.0, leagues.GAMES), True)
+check("level still reads as a dash",
+      "-" in sitebuild.behind(0.0, leagues.GAMES), True)
+
 print("\ncrest variants")
 import json as _json
 try:

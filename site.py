@@ -269,7 +269,12 @@ def row_shade(team, lighten=0.42, strength=0.34):
 
 
 def fmt(value, unit=None):
-    return "%g" % abs(value)
+    """Games behind always carries one decimal, so 7 and 2.5 line up as 7.0 and
+    2.5 down the column. Points behind stays whole -- hockey deals in whole
+    points and "17.0" would be inventing precision."""
+    if unit == leagues.POINTS:
+        return "%g" % abs(value)
+    return "%.1f" % abs(value)
 
 
 def behind(value, unit):

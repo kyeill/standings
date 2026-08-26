@@ -11,7 +11,7 @@ python site.py --all     same, but keep every sport, for testing
 python build.py          print what each tab resolved to, no HTML
 python mock.py           the three original design mockups
 python logos.py --write  re-measure which crest variant reads (rarely)
-python selftest.py       check the back end (74 assertions)
+python selftest.py       check the back end (79 assertions)
 ```
 
 Python is not on PATH:
@@ -59,6 +59,10 @@ even though goal difference decides the order.
 
 The metric column -- CFP odds, projected NCAA seed (header "Seed"), or NPI --
 sits at the very end.
+
+Games behind always carries one decimal, so 7 and 2.5 line up as 7.0 and 2.5
+down the column. Points behind stays whole: hockey deals in whole points and
+"17.0" would be inventing precision.
 
 **Under 640px one column steps aside**: Overall on college, W-D-L on soccer,
 and the index and numeric columns tighten. Six columns had left the team name
