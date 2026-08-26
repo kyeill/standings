@@ -49,7 +49,8 @@ points behind for hockey and soccer. Comparing overall records instead would
 number three 15-5 Big Ten teams 2, 3 and 4. Soccer counts as tied on POINTS
 even though goal difference decides the order.
 
-    NFL MLB   # | Team | Record | GB
+    NFL MLB   # | Team | Record | GB      GB on both tables, though the wild
+                                        card one measures from the cut line
     NBA       # | Team | Record | GB
     NHL       # | Team | Points | PB     points, no "pts" suffix
     CFB CBB   # | Team | Conf | Overall | GB | <metric>

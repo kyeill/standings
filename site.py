@@ -326,7 +326,9 @@ def section_table(sec, card):
     points = unit == leagues.POINTS
     # Hockey is behind on POINTS, not games, and the column holds points, not
     # a win-loss record.
-    gap_head = "vs line" if sec.get("from_cut") else ("PB" if points else "GB")
+    # Even in the wild-card table, where the gap is measured from the cut line
+    # rather than the leader, the column is still games (or points) behind.
+    gap_head = "PB" if points else "GB"
     rec_head = "Points" if points else "Record"
     return ('<table><tr><th>#</th><th>Team</th><th>%s</th><th>%s</th></tr>'
             '%s</table>' % (rec_head, gap_head, "".join(body)))
