@@ -50,10 +50,15 @@ points are still split by goal difference, so every position is numbered.
 
     tracker   # | Team | Record | GB
     hockey    # | Team | Points | PB      points, not games, and no "pts" suffix
-    college   # | Team | Conf | <metric> | Overall | GB
+    college   # | Team | Conf | Overall | GB | <metric>
     soccer    # | Team | P | W-D-L | GD | Pts
 
-The metric column is CFP odds, projected NCAA seed, or NPI.
+The metric column -- CFP odds, projected NCAA seed, or NPI -- sits at the very
+end. The index is centred in its own narrow column with padding either side.
+
+A poll rank renders as a **suffix**, "Oregon (#2)". As a prefix its variable
+width ("1" against "14") started every team name at a different x position, so
+the names did not line up down the column.
 
 ## Tabs
 

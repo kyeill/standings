@@ -76,11 +76,11 @@ section.on{display:block}
 table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;
       margin-top:11px;table-layout:fixed}
 /* Column 1 is the index and column 2 the team, which absorbs the slack: in a
-   fixed layout the one column without a width takes what is left. Indented so
-   the shaded row starts clear of the crest rather than butting against it. */
-th:first-child,td:first-child{width:34px;padding-left:8px}
+   fixed layout the one column without a width takes what is left. The index is
+   centred with padding on both sides so it does not sit against the crest. */
+th:first-child,td:first-child{width:38px;text-align:center;padding:4px 4px 4px 6px}
+th:nth-child(2),td:nth-child(2){text-align:left;padding-left:10px}
 th:nth-child(n+3),td:nth-child(n+3){width:58px}
-th:nth-child(2),td:nth-child(2){text-align:left}
 td:nth-child(2){overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 td:last-child,th:last-child{padding-right:6px}
 th{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;
@@ -96,7 +96,7 @@ tr.belowcut td{border-top:1px dashed var(--cut)}
 tr.skip td{color:var(--muted);font-size:12px;padding:2px 0}
 .logo{width:16px;height:16px;vertical-align:middle;margin-right:6px}
 .nm{vertical-align:middle}
-.rk{color:var(--cut);font-size:11.5px;margin-right:4px;vertical-align:middle}
+.rk{color:var(--cut);font-weight:400}
 .oddsnote{color:var(--muted);font-weight:400}
 .muted{color:var(--muted)}
 .note{color:var(--muted);font-size:13px;margin:9px 0;padding:9px 11px;
@@ -124,7 +124,8 @@ footer{margin-top:34px;color:var(--muted);font-size:12px;
           table{margin-top:13px}
   th{font-size:11.5px}
   td{font-size:15px;padding:6px 0}
-  th:first-child,td:first-child{width:44px;padding-left:11px}
+  th:first-child,td:first-child{width:48px;padding:6px 5px 6px 8px}
+  th:nth-child(2),td:nth-child(2){padding-left:13px}
   th:nth-child(n+3),td:nth-child(n+3){width:82px}
   td:last-child,th:last-child{padding-right:8px}
   .logo{width:19px;height:19px;margin-right:8px}
@@ -354,30 +355,31 @@ def table_block(t):
     spec = t.get("column")
     extra_head = "<th>%s</th>" % esc(spec["label"]) if spec else ""
     if college:
-        # index, team, conference record, then the metric, then overall
-        cols = ("<tr><th>#</th><th>Team</th><th>Conf</th>%s<th>Overall</th>"
-                "<th>GB</th></tr>" % extra_head)
+        cols = ("<tr><th>#</th><th>Team</th><th>Conf</th><th>Overall</th>"
+                "<th>GB</th>%s</tr>" % extra_head)
     else:
-        cols = ("<tr><th>#</th><th>Team</th>%s<th>P</th><th>W-D-L</th>"
-                "<th>GD</th><th>Pts</th></tr>" % extra_head)
+        cols = ("<tr><th>#</th><th>Team</th><th>P</th><th>W-D-L</th>"
+                "<th>GD</th><th>Pts</th>%s</tr>" % extra_head)
     idx = index_cells(t["rows"], blank_ties=college)
     body = []
     for i, r in enumerate(t["rows"]):
-        rank = ('<span class="rk">%s</span>' % r["poll"]) if r.get("poll") else ""
-        name = '%s%s<span class="nm">%s</span>' % (crest(r["logo"]), rank,
-                                                   esc(name_of(r, plain=college)))
+        # The rank goes AFTER the name. As a prefix its variable width ("1"
+        # versus "14") pushed every team name to a different x position.
+        rank = ('<span class="rk"> (#%s)</span>' % r["poll"]) if r.get("poll") else ""
+        name = '%s<span class="nm">%s</span>%s' % (
+            crest(r["logo"]), esc(name_of(r, plain=college)), rank)
         cell = "<td>%s</td>" % extra_value(r.get("extra"), spec) if spec else ""
         if college:
             # college hockey has ties, so print the record string as given
             # rather than rebuilding it from wins and losses alone
             conf = r.get("conf_record") or "%s-%s" % (r["wins"], r["losses"])
-            cells = '<td>%s</td>%s<td class="muted">%s</td><td>%s</td>' % (
-                esc(conf), cell, esc(r["record"]), behind(r["gb"], unit))
+            cells = '<td>%s</td><td class="muted">%s</td><td>%s</td>%s' % (
+                esc(conf), esc(r["record"]), behind(r["gb"], unit), cell)
         else:
-            cells = (cell + '<td class="muted">%s</td><td class="muted">%s</td>'
+            cells = ('<td class="muted">%s</td><td class="muted">%s</td>'
                      '<td class="muted">%s</td><td>%s</td>' % (
                          r["gp"] if r["gp"] is not None else "-",
-                         esc(r["record"]), goal_diff(r), r["points"]))
+                         esc(r["record"]), goal_diff(r), r["points"])) + cell
         klass = " ".join(x for x in ["mine" if r["mine"] else "",
                                      "belowcut" if t["line"] and i == t["line"] else ""]
                          if x)
