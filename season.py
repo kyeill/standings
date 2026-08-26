@@ -64,11 +64,6 @@ def is_live(league_path, today=None, window=WINDOW_DAYS, params=None):
     return False
 
 
-def describe(league_path, today=None):
-    """(live, note) -- the note explains a no, for the page to show."""
-    live = is_live(league_path, today)
-    return live, "" if live else "no games within %d days" % WINDOW_DAYS
-
 
 def current_phase(league_path, today=None, window=WINDOW_DAYS):
     """The set of season slugs with games around today.

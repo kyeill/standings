@@ -70,14 +70,6 @@ section.on{display:block}
       padding:13px 14px;margin:11px 0}
 .who{display:flex;align-items:center;gap:9px;font-weight:700;font-size:17px}
 .who img{width:22px;height:22px}
-.sub{color:var(--muted);font-size:13.5px;margin-top:3px}
-.verdict{display:flex;align-items:baseline;gap:9px;margin:11px 0 2px;
-         flex-wrap:wrap}
-.big{font-size:27px;font-weight:700;line-height:1}
-.big.in{color:var(--good)} .big.out{color:var(--bad)}
-.delta{font-size:13px;color:var(--muted)}
-.delta.up{color:var(--good)} .delta.down{color:var(--bad)}
-.gapline{color:var(--muted);font-size:13.5px}
 /* Fixed layout so the numeric columns land in the SAME place on every tab.
    With auto layout the team column ranged from 436px to 545px and the numbers
    jumped sideways as you swiped between sports. */
@@ -111,8 +103,7 @@ footer{margin-top:34px;color:var(--muted);font-size:12px;
        border-top:1px solid var(--line);padding-top:11px}
 @media (max-width:420px){
   td,th{font-size:12.5px}
-  .big{font-size:24px}
-}
+  }
 /* Desktop only. Everything above is the phone layout, which is already right,
    so this scales UP from 641px rather than touching the base rules. Sizes
    match the Games page: an 860px column and a 26px heading. */
@@ -128,11 +119,7 @@ footer{margin-top:34px;color:var(--muted);font-size:12px;
   .card{padding:15px 17px;margin:13px 0;border-radius:11px}
   .who{font-size:19px;gap:10px}
   .who img{width:25px;height:25px}
-  .sub{font-size:14px}
-  .big{font-size:32px}
-  .gapline{font-size:14.5px}
-  .delta{font-size:14px}
-  table{margin-top:13px}
+          table{margin-top:13px}
   th{font-size:11.5px}
   td{font-size:15px;padding:6px 0}
   th:not(:first-child),td:not(:first-child){width:82px}
@@ -267,11 +254,6 @@ def behind(value, unit):
 
 # --- tracker ----------------------------------------------------------------
 
-def window_rows(n, spots, mine_at):
-    keep = {0, 1, 2, spots - 2, spots - 1, spots, spots + 1}
-    keep |= {mine_at - 1, mine_at, mine_at + 1}
-    return sorted(i for i in keep if 0 <= i < n)
-
 
 def tracker_card(card):
     """A tracker tab reads exactly like a table tab: a heading per table and
@@ -396,31 +378,12 @@ def extra_value(value, spec):
     return "%d" % round(value)
 
 
-def short_team(name):
-    """Config names carry the mascot; a sentence reads better without it."""
-    for tail in (" Wolverines", " Big Red", " Hotspur", " United"):
-        if name.endswith(tail):
-            return name[: -len(tail)]
-    return name
-
 
 def goal_diff(row):
     value = row.get("diff")
     return esc(value) if value not in (None, "") else "-"
 
 
-def short_name(name):
-    if "Premier League" in name:
-        return "Premier League"
-    return (name.replace(" Division", "").replace(" Conference", "")
-            .replace("American League ", "AL ").replace("National League ", "NL "))
-
-
-def ordinal(n):
-    if n is None:
-        return "-"
-    suffix = "th" if 10 <= (n % 100) <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
-    return "%d%s" % (n, suffix)
 
 
 # --- page -------------------------------------------------------------------

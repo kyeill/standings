@@ -89,10 +89,15 @@ started. Neither is worth showing, and they fail differently, so an
 `"7-2-1, 0 PTS"` — the points half of the last-ten figure is always 0. Split on
 the comma.
 
-**College football FPI carries no projections in the preseason.** The endpoint
-answers with 138 teams and an empty projections list. `probmakeplayoffs` (which
-means CFP odds there) presumably appears once games are played — unverified
-until September.
+**The power index category is named differently per sport.** The NFL and NBA
+call it `projections`, college football calls it `fpi`, and college basketball
+splits across `bpi`, `resume` and `tournament`. Reading only `projections`
+returns nothing for both college sports, which made them look like they had no
+odds at all when they always did.
+
+**ESPN writes a near certainty as `">99.9%"`** and a long shot as `"<0.1%"`.
+The comparison character has to come off before the number will parse, or the
+strongest teams silently show no odds.
 
 **NHL and MLB have no powerindex endpoint at all** — both 400. This matches
 what the daily tool already found.

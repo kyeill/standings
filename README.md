@@ -10,7 +10,7 @@ python site.py           build the app into output/site/  (in-season sports only
 python site.py --all     same, but keep every sport, for testing
 python build.py          print what each tab resolved to, no HTML
 python mock.py           the three original design mockups
-python selftest.py       check the back end (38 assertions)
+python selftest.py       check the back end (65 assertions)
 ```
 
 Python is not on PATH:
@@ -22,17 +22,22 @@ No pandas or numpy. Standard library plus `requests`, same as sports-daily.
 
 Set per tab in `leagues.py`.
 
-**tracker** -- the Big 4 American sports. A race, not a table: the verdict
-("2.5 back", "Clinched", "Eliminated"), the playoff odds and how they have
-moved in a week, then a ladder with everyone not adjacent to a decision
-collapsed to "5 more". The dashed cut line is drawn where the playoff spots
-actually end.
+**tracker** -- the Big 4 American sports. The NFL and MLB show their division
+and then the Wild Card Race among the teams NOT leading one; the NBA and NHL
+show a single conference ladder. My team's playoff odds sit in parentheses
+after its name on exactly one of those tables: the division when it leads that
+division, the wild-card race otherwise. A blue dashed line marks the playoff
+cut; there is no caption, because the line says it.
 
 **table** -- college and soccer. A straight standings table, because those
 sports have no cut line worth computing: college races are decided by a poll
 or a selection committee, and a soccer league table IS the competition. Soccer
 tables still draw a line where one is meaningful (EPL at 4 for the Champions
-League, MLS at 9 for the playoffs).
+League, MLS at 9 for the playoffs). The college tabs carry a per-team metric
+column: CFP odds, projected NCAA seed, and NPI respectively.
+
+Every table shows every team -- nothing is collapsed -- and tables use a fixed
+layout so the numeric columns land in the same place on every tab.
 
 ## Tabs
 
@@ -66,7 +71,8 @@ football today). **Preseason counts as off** -- without that the NFL shows
 | NBA | ESPN BPI | also carries a play-in chance |
 | MLB | ESPN standings | `playoffPercent`, right in the payload |
 | NHL | Hockey-Reference | scraped; see below |
-| College football | ESPN FPI | means CFP odds; empty in the preseason |
+| College football | ESPN FPI | means CFP odds; a column on the Big Ten table |
+| College basketball | ESPN BPI | projected NCAA seed, not a probability |
 | College hockey | NCAA NPI rank | not odds, but the metric that decides selection |
 | Everything else | none exists | college basketball, soccer |
 
@@ -76,13 +82,17 @@ their robots.txt (checked 2026-08-25) and the code honours their published
 `Crawl-delay: 3`, fetching once a day and caching for twelve hours. If that
 ever feels wrong, delete the source and the NHL simply loses its odds column.
 
-## The trend
+## The odds history
 
 `history.py` appends one row per team per day to
-`output/history/odds-<league>.csv`, and the page shows the move against the
-reading closest to a week ago. **This cannot be backfilled** -- no source
-publishes yesterday's number -- so the feature is worth exactly as much as the
-number of days it has been running. It started 2026-08-25.
+`output/history/odds-<league>.csv`, for leagues actually in season. **This
+cannot be backfilled** -- no source publishes yesterday's number -- so it is
+worth exactly as much as the number of days it has been running. It started
+2026-08-25.
+
+The page does NOT currently show the movement: the week-over-week delta was
+built and then removed on 2026-08-25 because the line it lived on was clutter.
+The recording continues so the option stays open.
 
 ## Deployment
 
@@ -109,4 +119,5 @@ Two traps worth remembering, both cost time here:
 * The NPI rank comes from a community mirror of ncaa.com, not a first-party
   feed. If it goes away the hockey tables just lose their rank column.
 * College basketball and soccer have no odds source at all.
-* The college football spread of FPI odds is unverified until the season starts.
+* The Pistons' teal and the Cavaliers' gold are hand-picked: ESPN has no teal
+  for the Pistons at all, and returns a muted antique gold for the Cavaliers.
