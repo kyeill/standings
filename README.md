@@ -10,7 +10,7 @@ python site.py           build the app into output/site/  (in-season sports only
 python site.py --all     same, but keep every sport, for testing
 python build.py          print what each tab resolved to, no HTML
 python mock.py           the three original design mockups
-python selftest.py       check the back end (65 assertions)
+python selftest.py       check the back end (69 assertions)
 ```
 
 Python is not on PATH:
@@ -38,6 +38,22 @@ column: CFP odds, projected NCAA seed, and NPI respectively.
 
 Every table shows every team -- nothing is collapsed -- and tables use a fixed
 layout so the numeric columns land in the same place on every tab.
+
+## Columns
+
+Every table leads with an index. A row **tied with the one above is left
+blank**, where tied means the same value in the column the table is ordered by
+-- conference games behind for college, games behind for the American sports,
+points behind for hockey. Comparing overall records instead would number three
+15-5 Big Ten teams 2, 3 and 4. A league table is the exception: clubs level on
+points are still split by goal difference, so every position is numbered.
+
+    tracker   # | Team | Record | GB
+    hockey    # | Team | Points | PB      points, not games, and no "pts" suffix
+    college   # | Team | Conf | <metric> | Overall | GB
+    soccer    # | Team | P | W-D-L | GD | Pts
+
+The metric column is CFP odds, projected NCAA seed, or NPI.
 
 ## Tabs
 

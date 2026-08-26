@@ -199,6 +199,23 @@ teams_noted = {r["team"] for sec in drawn["sections"] for r in sec["rows"]
 check("both tracked NBA teams show odds on the one table",
       teams_noted, {"Detroit Pistons", "Cleveland Cavaliers"})
 
+print("\nindex column")
+import importlib.util as _ilu
+_spec = _ilu.spec_from_file_location("sitebuild", "site.py")
+sitebuild = _ilu.module_from_spec(_spec)
+_spec.loader.exec_module(sitebuild)
+idx_rows = [{"gb": 0.0}, {"gb": 4.0}, {"gb": 4.0}, {"gb": 4.0}, {"gb": 5.0}]
+check("ties share a position and leave the rest blank",
+      sitebuild.index_cells(idx_rows), ["1", "2", "", "", "5"])
+check("a league table numbers every position",
+      sitebuild.index_cells(idx_rows, blank_ties=False),
+      ["1", "2", "3", "4", "5"])
+check("a missing gap does not crash the index",
+      sitebuild.index_cells([{"gb": None}, {"gb": None}]), ["1", ""])
+check("a points sport prints no unit in the cell",
+      sitebuild.record_of({"points": 113, "record": "53-22-7"}, leagues.POINTS),
+      "113")
+
 print("\nend to end  [LIVE]")
 data = build.build_all(include_offseason=False)
 live = sorted(t["label"] for t in data["tabs"] if t["live"])

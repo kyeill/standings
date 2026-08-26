@@ -75,17 +75,19 @@ section.on{display:block}
    jumped sideways as you swiped between sports. */
 table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;
       margin-top:11px;table-layout:fixed}
-th:not(:first-child),td:not(:first-child){width:58px}
-/* Indent the first column so the shaded row starts clear of the crest rather
-   than butting straight up against it. */
-th:first-child,td:first-child{padding-left:8px}
+/* Column 1 is the index and column 2 the team, which absorbs the slack: in a
+   fixed layout the one column without a width takes what is left. Indented so
+   the shaded row starts clear of the crest rather than butting against it. */
+th:first-child,td:first-child{width:34px;padding-left:8px}
+th:nth-child(n+3),td:nth-child(n+3){width:58px}
+th:nth-child(2),td:nth-child(2){text-align:left}
+td:nth-child(2){overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 td:last-child,th:last-child{padding-right:6px}
-td:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 th{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;
    color:var(--muted);font-weight:600;text-align:right;padding:0 0 5px}
-th:first-child{text-align:left}
+
 td{padding:4px 0;border-top:1px solid var(--line);text-align:right;font-size:13.5px}
-td:first-child{text-align:left}
+
 /* The row is shaded in a lightened version of the team's own colour. The
    old 3px inset bar sat on top of the crest, which is why it looked like it
    was running over the logo. */
@@ -122,8 +124,8 @@ footer{margin-top:34px;color:var(--muted);font-size:12px;
           table{margin-top:13px}
   th{font-size:11.5px}
   td{font-size:15px;padding:6px 0}
-  th:not(:first-child),td:not(:first-child){width:82px}
-  th:first-child,td:first-child{padding-left:11px}
+  th:first-child,td:first-child{width:44px;padding-left:11px}
+  th:nth-child(n+3),td:nth-child(n+3){width:82px}
   td:last-child,th:last-child{padding-right:8px}
   .logo{width:19px;height:19px;margin-right:8px}
   .rk{font-size:12.5px}
@@ -234,7 +236,8 @@ def row_shade(team, lighten=0.42, strength=0.34):
 
 
 def unit_word(unit):
-    return " pts" if unit == leagues.POINTS else ""
+    # Points are labelled by the column header now, not repeated in every cell.
+    return ""
 
 
 def fmt(value, unit):
@@ -277,6 +280,7 @@ def section_table(sec, card):
     unit = card["unit"]
     rows, cut = sec["rows"], sec["cut"]
     # Every team, every table -- his call. Longer, but nothing is hidden.
+    idx = index_cells(rows)
     body = []
     for i in range(len(rows)):
         r = rows[i]
@@ -284,22 +288,20 @@ def section_table(sec, card):
         # caption row taking up a whole row's height to say what is obvious.
         klass = " ".join(x for x in ["mine" if r["mine"] else "",
                                      "belowcut" if cut and i == cut else ""] if x)
-        cell = ("<td>%s</td>" % extra_value(r.get("extra"), sec["column"])
-                if sec.get("column") else "")
         body.append('<tr class="%s" style="--tintbg:#%s">'
-                    '<td>%s<span class="nm">%s</span></td>%s'
-                    '<td class="muted">%s</td><td>%s</td><td>%s</td></tr>' % (
-                        klass, row_shade(r["team"]),
+                    '<td class="muted">%s</td>'
+                    '<td>%s<span class="nm">%s</span></td>'
+                    '<td>%s</td><td>%s</td></tr>' % (
+                        klass, row_shade(r["team"]), idx[i],
                         crest(r["logo"]), esc(name_of(r)) + odds_note(r),
-                        cell, i + 1,
                         esc(record_of(r, unit)), behind(r["gb"], unit)))
-    # Only the conference ladder is a real seeding; the numbers beside a
-    # division or a wild-card field are just positions within that field.
-    head = "Seed" if sec["kind"] == "conference" else "Pos"
-    gap_head = "vs line" if sec.get("from_cut") else "GB"
-    extra_head = "<th>%s</th>" % esc(sec["column"]["label"]) if sec.get("column") else ""
-    return ('<table><tr><th>Team</th>%s<th>%s</th><th>Record</th><th>%s</th></tr>'
-            '%s</table>' % (extra_head, head, gap_head, "".join(body)))
+    points = unit == leagues.POINTS
+    # Hockey is behind on POINTS, not games, and the column holds points, not
+    # a win-loss record.
+    gap_head = "vs line" if sec.get("from_cut") else ("PB" if points else "GB")
+    rec_head = "Points" if points else "Record"
+    return ('<table><tr><th>#</th><th>Team</th><th>%s</th><th>%s</th></tr>'
+            '%s</table>' % (rec_head, gap_head, "".join(body)))
 
 
 def name_of(row, plain=False):
@@ -308,6 +310,25 @@ def name_of(row, plain=False):
     if plain and row.get("location"):
         return row["location"]
     return row.get("team") or ""
+
+
+def index_cells(rows, blank_ties=True):
+    """The leading 1,2,3 column, blanking a row tied with the one above it.
+
+    Tied means the same value in the column the table is ORDERED by, which is
+    the gap column: conference games behind for college, games behind for the
+    American sports, points behind for hockey. Comparing overall records
+    instead would number three 15-5 Big Ten teams 2, 3 and 4.
+
+    A league table is the exception (blank_ties=False): clubs level on points
+    are still separated by goal difference, so every position is numbered.
+    """
+    out, last = [], object()
+    for i, r in enumerate(rows):
+        key = round(r["gb"], 3) if r.get("gb") is not None else None
+        out.append("" if (blank_ties and i and key == last) else str(i + 1))
+        last = key
+    return out
 
 
 def odds_note(row):
@@ -320,11 +341,10 @@ def odds_note(row):
 
 
 def record_of(row, unit):
-    rec = row.get("record") or ""
-    rec = rec.split(",")[0]
+    """A points sport shows its points and nothing else; the header says so."""
     if unit == leagues.POINTS and row.get("points") is not None:
-        return "%s pts" % row["points"]
-    return rec
+        return "%s" % row["points"]
+    return (row.get("record") or "").split(",")[0]
 
 
 # --- straight table ---------------------------------------------------------
@@ -334,11 +354,13 @@ def table_block(t):
     spec = t.get("column")
     extra_head = "<th>%s</th>" % esc(spec["label"]) if spec else ""
     if college:
-        cols = ("<tr><th>Team</th>%s<th>Conf</th><th>Overall</th><th>GB</th></tr>"
-                % extra_head)
+        # index, team, conference record, then the metric, then overall
+        cols = ("<tr><th>#</th><th>Team</th><th>Conf</th>%s<th>Overall</th>"
+                "<th>GB</th></tr>" % extra_head)
     else:
-        cols = ("<tr><th>Team</th>%s<th>P</th><th>W-D-L</th><th>GD</th>"
-                "<th>Pts</th></tr>" % extra_head)
+        cols = ("<tr><th>#</th><th>Team</th>%s<th>P</th><th>W-D-L</th>"
+                "<th>GD</th><th>Pts</th></tr>" % extra_head)
+    idx = index_cells(t["rows"], blank_ties=college)
     body = []
     for i, r in enumerate(t["rows"]):
         rank = ('<span class="rk">%s</span>' % r["poll"]) if r.get("poll") else ""
@@ -349,8 +371,8 @@ def table_block(t):
             # college hockey has ties, so print the record string as given
             # rather than rebuilding it from wins and losses alone
             conf = r.get("conf_record") or "%s-%s" % (r["wins"], r["losses"])
-            cells = '%s<td>%s</td><td class="muted">%s</td><td>%s</td>' % (
-                cell, esc(conf), esc(r["record"]), behind(r["gb"], unit))
+            cells = '<td>%s</td>%s<td class="muted">%s</td><td>%s</td>' % (
+                esc(conf), cell, esc(r["record"]), behind(r["gb"], unit))
         else:
             cells = (cell + '<td class="muted">%s</td><td class="muted">%s</td>'
                      '<td class="muted">%s</td><td>%s</td>' % (
@@ -359,8 +381,9 @@ def table_block(t):
         klass = " ".join(x for x in ["mine" if r["mine"] else "",
                                      "belowcut" if t["line"] and i == t["line"] else ""]
                          if x)
-        body.append('<tr class="%s" style="--tintbg:#%s"><td>%s</td>%s</tr>' % (
-            klass, row_shade(r["team"]), name, cells))
+        body.append('<tr class="%s" style="--tintbg:#%s">'
+                    '<td class="muted">%s</td><td>%s</td>%s</tr>' % (
+                        klass, row_shade(r["team"]), idx[i], name, cells))
     # Say so when the numbers are computed rather than published.
     note = ""
     return ('<div class="card"><div class="who">%s</div>%s<table>%s%s</table></div>'
