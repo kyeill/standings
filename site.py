@@ -21,10 +21,16 @@ import leagues
 HERE = os.path.dirname(os.path.abspath(__file__))
 SITE = os.path.join(HERE, "output", "site")
 
+# Row shading colours. Several are deliberately NOT what ESPN returns: it
+# gives the Tigers navy, Michigan blue, the Cavaliers a muted antique gold
+# (#bc945c) rather than their actual gold, and it has no teal for the Pistons
+# at all -- only blue and red.
 COLORS = {
     "Detroit Lions": "0076b6", "Detroit Tigers": "fa4616",
-    "Detroit Pistons": "c8102e", "Detroit Red Wings": "ce1126",
-    "Cleveland Cavaliers": "860038", "Michigan Wolverines": "ffcb05",
+    "Detroit Pistons": "00a3a5",        # the 1996-2001 teal, his pick
+    "Detroit Red Wings": "ce1126",
+    "Cleveland Cavaliers": "fdbb30",    # the gold, not ESPN's dull version
+    "Michigan Wolverines": "ffcb05",
     "Cornell Big Red": "b31b1b", "Tottenham Hotspur": "132257",
     "Atlanta United FC": "80000a",
 }
