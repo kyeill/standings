@@ -54,7 +54,9 @@ even though goal difference decides the order.
     soccer    # | Team | P | W-D-L | GD | Pts
 
 The metric column -- CFP odds, projected NCAA seed, or NPI -- sits at the very
-end. The index is centred in its own narrow column with padding either side.
+end. **Under 640px one column steps aside**: the overall record on college, and
+W-D-L on soccer. Six columns left the team name 47px on a 375px phone, which
+truncated most of it; with one gone and the rest tightened it is 143px. The index is centred in its own narrow column with padding either side.
 
 A poll rank renders as a **suffix**, "Oregon (#2)". As a prefix its variable
 width ("1" against "14") started every team name at a different x position, so

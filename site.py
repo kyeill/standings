@@ -102,9 +102,19 @@ tr.belowcut td{border-top:1px dashed var(--cut)}
       border:1px dashed var(--line);border-radius:9px}
 footer{margin-top:34px;color:var(--muted);font-size:12px;
        border-top:1px solid var(--line);padding-top:11px}
+/* Under 640px the six-column tables left the team name just 47px. The least
+   useful column steps aside -- the overall record on college, W-D-L on soccer
+   -- and the rest tighten up. */
+@media (max-width:640px){
+  .hide-sm{display:none}
+  th:first-child,td:first-child{width:30px;padding:4px 2px 4px 4px}
+  th:nth-child(2),td:nth-child(2){padding-left:8px}
+  th:nth-child(n+3),td:nth-child(n+3){width:52px}
+}
 @media (max-width:420px){
   td,th{font-size:12.5px}
-  }
+  th:nth-child(n+3),td:nth-child(n+3){width:48px}
+}
 /* Desktop only. Everything above is the phone layout, which is already right,
    so this scales UP from 641px rather than touching the base rules. Sizes
    match the Games page: an 860px column and a 26px heading. */
@@ -349,11 +359,12 @@ def table_block(t):
     spec = t.get("column")
     extra_head = "<th>%s</th>" % esc(spec["label"]) if spec else ""
     if college:
-        cols = ("<tr><th>#</th><th>Team</th><th>Conf</th><th>Overall</th>"
-                "<th>GB</th>%s</tr>" % extra_head)
+        cols = ('<tr><th>#</th><th>Team</th><th>Conf</th>'
+                '<th class="hide-sm">Overall</th><th>GB</th>%s</tr>' % extra_head)
     else:
-        cols = ("<tr><th>#</th><th>Team</th><th>P</th><th>W-D-L</th>"
-                "<th>GD</th><th>Pts</th>%s</tr>" % extra_head)
+        cols = ('<tr><th>#</th><th>Team</th><th>P</th>'
+                '<th class="hide-sm">W-D-L</th><th>GD</th><th>Pts</th>%s</tr>'
+                % extra_head)
     idx = index_cells(t["rows"])
     body = []
     for i, r in enumerate(t["rows"]):
@@ -367,10 +378,11 @@ def table_block(t):
             # college hockey has ties, so print the record string as given
             # rather than rebuilding it from wins and losses alone
             conf = r.get("conf_record") or "%s-%s" % (r["wins"], r["losses"])
-            cells = '<td>%s</td><td class="muted">%s</td><td>%s</td>%s' % (
-                esc(conf), esc(r["record"]), behind(r["gb"], unit), cell)
+            cells = ('<td>%s</td><td class="muted hide-sm">%s</td>'
+                     '<td>%s</td>%s' % (
+                         esc(conf), esc(r["record"]), behind(r["gb"], unit), cell))
         else:
-            cells = ('<td class="muted">%s</td><td class="muted">%s</td>'
+            cells = ('<td class="muted">%s</td><td class="muted hide-sm">%s</td>'
                      '<td class="muted">%s</td><td>%s</td>' % (
                          r["gp"] if r["gp"] is not None else "-",
                          esc(r["record"]), goal_diff(r), r["points"])) + cell
