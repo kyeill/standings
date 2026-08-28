@@ -40,7 +40,13 @@ jobs:
         run: |
           today=$(TZ=America/New_York date +%F)
           last=$(cat output/history/_last_build.txt 2>/dev/null || echo none)
-          if [ "$today" = "$last" ]; then
+          # The stamp exists to stop the three scheduled slots building the
+          # same day three times. It must not block a manual run or a push:
+          # a code change shipped after the morning build would otherwise
+          # redeploy the old page and look like it worked.
+          if [ "${{ github.event_name }}" != "schedule" ]; then
+            echo "run=yes" >> "$GITHUB_OUTPUT"
+          elif [ "$today" = "$last" ]; then
             echo "run=no" >> "$GITHUB_OUTPUT"
           else
             echo "run=yes" >> "$GITHUB_OUTPUT"
