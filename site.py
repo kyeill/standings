@@ -224,6 +224,29 @@ addEventListener('touchend',e=>{
 
 if('serviceWorker' in navigator)
   navigator.serviceWorker.register('./sw.js').catch(()=>{});
+
+// A page that is left open does not refetch. An installed app resumed from the
+// home screen shows its last render for as long as the phone keeps it alive,
+// and a desktop tab restored from the back/forward cache does the same. Either
+// way the build behind it can move on without the reader ever seeing it.
+//
+// BUILT is the day this page was made. On coming back to it, reload if the day
+// has moved on, or if it has simply been sitting a while. Nothing happens while
+// it is in use.
+const BUILT='%%BUILT%%';
+let hidden=Date.now();
+function stale(){
+  const n=new Date();
+  const today=new Date(n.getTime()-n.getTimezoneOffset()*6e4).toISOString().slice(0,10);
+  return today!==BUILT||(Date.now()-hidden)>18e5;
+}
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='hidden'){hidden=Date.now();return;}
+  if(stale())location.reload();
+});
+// Restored from the back/forward cache: no visibilitychange fires, so this is
+// the desktop equivalent of the same problem.
+window.addEventListener('pageshow',e=>{if(e.persisted&&stale())location.reload();});
 """
 
 
@@ -562,7 +585,7 @@ def render(data, include_all=False):
             'the NHL. College and soccer have no odds source.</footer></div>'
             '<script>%s</script>') % (
         esc(data["built"]), CSS, esc(pretty(data["built"])), nav,
-        fail, "".join(panes), JS)
+        fail, "".join(panes), JS.replace("%%BUILT%%", data["built"]))
 
 
 def pretty(iso):
