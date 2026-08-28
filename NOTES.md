@@ -26,6 +26,25 @@ python model.py    -> a one-line summary per tracked team, for sanity checks
 
 ## Traps
 
+- **The build stamp must not block a manual run.** `_last_build.txt` exists so
+  the three scheduled slots do not build the same day three times. It was
+  gating every event, so a change pushed after the morning build redeployed
+  the *old* page and the run still went green -- which is how a fix appeared
+  to ship without reaching the site. Only `schedule` consults the stamp now.
+- **A page that is left open never refetches.** An installed app resumed from
+  the home screen shows its last render for as long as the phone keeps it
+  alive, and a desktop tab restored from the back/forward cache does the same.
+  The page carries the day it was built for and reloads on `visibilitychange`
+  or `pageshow` when the date has moved on or it has been hidden half an hour.
+  Both hooks are needed: a bfcache restore fires no `visibilitychange`.
+- **Scheduled runs can stop with no error at all.** On 2026-08-27 no run of
+  any kind was created here, in sports-daily or in dynasty -- workflows still
+  `active`, Actions enabled, crons untouched, and `workflow_dispatch` working.
+  Check `gh run list` against `git rev-parse HEAD` rather than trusting the
+  last green run.
+- **This repo's default branch is `master`**, not `main`. `gh workflow run
+  --ref main` fails with "No ref found".
+
 **MLB is far richer than the other sports.** Its standings entries carry
 `playoffPercent`, `wildCardPercent`, `magicNumberDivision` and
 `magicNumberWildcard` directly — no FanGraphs call needed for a standings page.
