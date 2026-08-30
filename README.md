@@ -191,11 +191,16 @@ The recording continues so the option stays open.
 
 ## The app icon
 
-`site.py` draws the icon by pixel maths -- a filled accent circle, supersampled
-3x3 per pixel so the edge is smooth -- and writes it at 180, 192 and 512px.
-There is no image library on this machine, and the same trick is what
-sports-daily does. Solid on purpose: sports-daily's icon is a RING with a gap,
-so the two apps stay apart at a glance in a row of tabs.
+`site.py` draws the icon by pixel maths -- three standings rows, the top one in
+the accent colour -- and writes it at 180, 192 and 512px. There is no image
+library on this machine, and the same trick is what sports-daily does.
+
+The manifest marks the icon **`purpose: "any maskable"`**, which is what makes
+a launcher crop it to its own shape -- a circle on Android -- instead of
+padding the square into a container. Every bar corner sits within the maskable
+safe zone (a circle of radius 0.4 about the centre; the furthest is 0.388), so
+nothing is clipped. 180px is written for `apple-touch-icon` only: iOS ignores
+the manifest and applies its own rounded-square mask.
 
 The page carries an explicit `<link rel="icon">`. Without it a desktop browser
 asks for `/favicon.ico`, which this site does not ship, and shows a blank tab

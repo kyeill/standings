@@ -602,39 +602,35 @@ def pretty(iso):
 PNG_SIGNATURE = bytes([137, 80, 78, 71, 13, 10, 26, 10])
 
 ICON_BG = (0x16, 0x16, 0x1a)
-ICON_FG = (0xe0, 0x83, 0x4f)          # the accent, as on the page
+# Three standings rows, the top one in the accent colour. Every bar corner sits
+# inside the maskable safe zone -- a circle of radius 0.4 about the centre --
+# so nothing is clipped when a launcher masks the icon to a circle.
+ICON_BARS = [
+    (0.203, 0.250, 0.594, 0.086, (0xe0, 0x83, 0x4f)),
+    (0.203, 0.453, 0.406, 0.086, (0x9a, 0x9a, 0x95)),
+    (0.203, 0.656, 0.500, 0.086, (0x9a, 0x9a, 0x95)),
+]
 
 
 def _png(size):
-    """A filled accent circle on the dark ground, drawn by pixel maths.
+    """The icon, drawn by pixel maths -- there is no image library here.
 
-    There is no image library on this machine, so the disc is supersampled 3x3
-    per pixel to get a smooth edge rather than a stair-stepped one. Solid on
-    purpose: sports-daily's icon is a RING with a gap, so the two apps stay
-    apart at a glance in a row of tabs.
+    Full bleed on purpose: the manifest marks it `maskable`, so the platform
+    crops it to its own shape (a circle on most Android launchers) rather than
+    padding a square into a container.
     """
-    centre = (size - 1) / 2.0
-    radius = size * 0.36
-    step, samples = 1.0 / 3, 9
+    bars = [(int(x * size), int(y * size), int(w * size), max(2, int(h * size)), c)
+            for x, y, w, h, c in ICON_BARS]
     rows = []
     for y in range(size):
         row = bytearray([0])                    # filter byte: none
         for x in range(size):
-            hits = 0
-            for sy in range(3):
-                for sx in range(3):
-                    dx = x + (sx + 0.5) * step - 0.5 - centre
-                    dy = y + (sy + 0.5) * step - 0.5 - centre
-                    if dx * dx + dy * dy <= radius * radius:
-                        hits += 1
-            if hits == samples:
-                row += bytes(ICON_FG)
-            elif hits == 0:
-                row += bytes(ICON_BG)
-            else:
-                blend = hits / samples
-                row += bytes(int(b + (f - b) * blend)
-                             for b, f in zip(ICON_BG, ICON_FG))
+            colour = ICON_BG
+            for bx, by, bw, bh, c in bars:
+                if bx <= x < bx + bw and by <= y < by + bh:
+                    colour = c
+                    break
+            row += bytes(colour)
         rows.append(bytes(row))
 
     def chunk(tag, data):
@@ -653,8 +649,15 @@ MANIFEST = {
     "name": "Standings", "short_name": "Standings", "start_url": "./",
     "display": "standalone", "background_color": "#16161a",
     "theme_color": "#16161a",
+    "scope": "./",
+    # "maskable" is what makes a launcher crop the icon to its own shape --
+    # a circle on Android. Without it the square is padded into a container,
+    # which is why this looked unlike Games on the home screen.
     "icons": [{"src": "icon-%d.png" % n, "sizes": "%dx%d" % (n, n),
-               "type": "image/png"} for n in ICON_SIZES],
+               "type": "image/png", "purpose": "any maskable"}
+              # 180 is only for apple-touch-icon; iOS ignores the
+              # manifest and applies its own rounded-square mask.
+              for n in (192, 512)],
 }
 
 
