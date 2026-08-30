@@ -57,3 +57,15 @@ Three steps, and skipping any of them silently does nothing:
    `gh workflow run build.yml -R kyeill/standings`
 
 Without step 3 the gate sees the day as already built and skips.
+
+## If git says it is stopping "in case you still have something valuable"
+
+This repo lives inside Google Drive, which syncs `.git` and sometimes holds a
+handle on a file git is trying to delete. A finished rebase can leave an EMPTY
+`.git/rebase-merge/` behind, and every later `pull --rebase` then refuses.
+
+    rmdir .git/rebase-merge
+    rm -f .git/REBASE_HEAD
+
+Check `git log` first: the rebase has usually already succeeded, so there is
+nothing to recover. `git status -sb` showing a normal branch line confirms it.
