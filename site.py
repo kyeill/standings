@@ -602,33 +602,39 @@ def pretty(iso):
 PNG_SIGNATURE = bytes([137, 80, 78, 71, 13, 10, 26, 10])
 
 ICON_BG = (0x16, 0x16, 0x1a)
-ICON_BARS = [
-    # x, y, width, height as fractions -- three standings rows, the top one
-    # picked out in the accent colour. Matches the page it opens.
-    (0.203, 0.250, 0.594, 0.086, (0xe0, 0x83, 0x4f)),
-    (0.203, 0.453, 0.406, 0.086, (0x9a, 0x9a, 0x95)),
-    (0.203, 0.656, 0.500, 0.086, (0x9a, 0x9a, 0x95)),
-]
+ICON_FG = (0xe0, 0x83, 0x4f)          # the accent, as on the page
 
 
 def _png(size):
-    """A flat icon drawn by pixel maths -- there is no image library here.
+    """A filled accent circle on the dark ground, drawn by pixel maths.
 
-    Same approach as sports-daily: cheap to generate at every size the manifest
-    asks for, and legible at 48px on a home screen.
+    There is no image library on this machine, so the disc is supersampled 3x3
+    per pixel to get a smooth edge rather than a stair-stepped one. Solid on
+    purpose: sports-daily's icon is a RING with a gap, so the two apps stay
+    apart at a glance in a row of tabs.
     """
-    bars = [(int(x * size), int(y * size), int(w * size), max(2, int(h * size)), c)
-            for x, y, w, h, c in ICON_BARS]
+    centre = (size - 1) / 2.0
+    radius = size * 0.36
+    step, samples = 1.0 / 3, 9
     rows = []
     for y in range(size):
         row = bytearray([0])                    # filter byte: none
         for x in range(size):
-            colour = ICON_BG
-            for bx, by, bw, bh, c in bars:
-                if bx <= x < bx + bw and by <= y < by + bh:
-                    colour = c
-                    break
-            row += bytes(colour)
+            hits = 0
+            for sy in range(3):
+                for sx in range(3):
+                    dx = x + (sx + 0.5) * step - 0.5 - centre
+                    dy = y + (sy + 0.5) * step - 0.5 - centre
+                    if dx * dx + dy * dy <= radius * radius:
+                        hits += 1
+            if hits == samples:
+                row += bytes(ICON_FG)
+            elif hits == 0:
+                row += bytes(ICON_BG)
+            else:
+                blend = hits / samples
+                row += bytes(int(b + (f - b) * blend)
+                             for b, f in zip(ICON_BG, ICON_FG))
         rows.append(bytes(row))
 
     def chunk(tag, data):
