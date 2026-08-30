@@ -1,6 +1,7 @@
 """Assemble every tab's data: trackers for the Big 4, tables for the rest."""
 
 import datetime
+import os
 
 import chockey
 import fetch
@@ -343,6 +344,11 @@ def table(group, today):
 
 def build_all(today=None, include_offseason=False):
     today = today or datetime.date.today()
+    # Only the morning build writes history. A local run would otherwise append
+    # its own rows for today, which then conflict with the ones the workflow
+    # committed hours earlier -- the same day recorded twice, with different
+    # numbers, and a merge conflict on the next push.
+    record = bool(os.environ.get("GITHUB_ACTIONS"))
     tabs = []
     for tab in leagues.TABS:
         payload = {"key": tab["key"], "label": tab["label"], "mode": tab["mode"],
@@ -361,7 +367,8 @@ def build_all(today=None, include_offseason=False):
                     group["path"], today)):
                 continue
             if tab["mode"] == "tracker":
-                payload["cards"].extend(tracker(group, today, record=live))
+                payload["cards"].extend(
+                    tracker(group, today, record=live and record))
             else:
                 built = table(group, today)
                 if built:

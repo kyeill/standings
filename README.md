@@ -176,7 +176,11 @@ ever feels wrong, delete the source and the NHL simply loses its odds column.
 ## The odds history
 
 `history.py` appends one row per team per day to
-`output/history/odds-<league>.csv`, for leagues actually in season. **This
+`output/history/odds-<league>.csv`, for leagues actually in season, and **only
+when `GITHUB_ACTIONS` is set**. A local run would otherwise append its own rows
+for today, which then conflict with the ones the workflow committed hours
+earlier -- the same day recorded twice with different numbers, and a merge
+conflict on the next push. That happened on 2026-08-29. **This
 cannot be backfilled** -- no source publishes yesterday's number -- so it is
 worth exactly as much as the number of days it has been running. It started
 2026-08-25.
