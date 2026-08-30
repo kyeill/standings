@@ -185,6 +185,16 @@ The page does NOT currently show the movement: the week-over-week delta was
 built and then removed on 2026-08-25 because the line it lived on was clutter.
 The recording continues so the option stays open.
 
+## The app icon
+
+`site.py` draws the icon by pixel maths -- three standings rows, the top one in
+the accent colour -- and writes it at 180, 192 and 512px. There is no image
+library on this machine, and the same trick is what sports-daily does.
+
+The page carries an explicit `<link rel="icon">`. Without it a desktop browser
+asks for `/favicon.ico`, which this site does not ship, and shows a blank tab
+after the 404 -- which is exactly what it did until 2026-08-29.
+
 ## Deployment
 
 Live at <https://kyeill.github.io/standings/>, built by GitHub Actions at

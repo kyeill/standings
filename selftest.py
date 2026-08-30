@@ -183,8 +183,11 @@ nfl = next(t for t in leagues.TABS if t["key"] == "nfl")["groups"][0]
 lions = build.tracker(nfl, datetime.date.today(), record=False)[0]
 lead_noted = [sec["kind"] for sec in lions["sections"]
               for r in sec["rows"] if r.get("odds_note") is not None]
-check("a division leader carries it on the division table",
-      lead_noted, ["division"])
+# Assert the RULE, not today's standings: this test hard-coded "the Lions lead
+# the NFC North", which stopped being true the moment they lost a game.
+check("the note follows whether the team leads its division",
+      lead_noted,
+      ["division"] if lions["leads_division"] else ["wildcard"])
 check("no tracker table has an odds column any more",
       all(sec.get("column") is None for sec in tc["sections"]), True)
 check("the wild-card label is capitalised",

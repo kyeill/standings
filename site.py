@@ -12,8 +12,10 @@ import datetime
 import html
 import json
 import os
+import struct
 import sys
 import unicodedata
+import zlib
 
 import build
 import fetch
@@ -576,6 +578,11 @@ def render(data, include_all=False):
             'viewport-fit=cover">'
             '<meta name="theme-color" content="#16161a">'
             '<link rel="manifest" href="./manifest.webmanifest">'
+            # Without an explicit icon a desktop browser asks for /favicon.ico,
+            # which this site does not ship, and shows a blank tab after the
+            # 404 -- which is exactly what it was doing.
+            '<link rel="icon" href="./icon-192.png">'
+            '<link rel="apple-touch-icon" href="./icon-180.png">'
             '<title>Standings</title>' + FONT +
             '<style>%s</style>'
             '<div class="wrap"><header><h1>Standings<span>%s</span></h1></header>'
@@ -592,19 +599,57 @@ def pretty(iso):
     return datetime.date.fromisoformat(iso).strftime("%d %b %Y")
 
 
+PNG_SIGNATURE = bytes([137, 80, 78, 71, 13, 10, 26, 10])
+
+ICON_BG = (0x16, 0x16, 0x1a)
+ICON_BARS = [
+    # x, y, width, height as fractions -- three standings rows, the top one
+    # picked out in the accent colour. Matches the page it opens.
+    (0.203, 0.250, 0.594, 0.086, (0xe0, 0x83, 0x4f)),
+    (0.203, 0.453, 0.406, 0.086, (0x9a, 0x9a, 0x95)),
+    (0.203, 0.656, 0.500, 0.086, (0x9a, 0x9a, 0x95)),
+]
+
+
+def _png(size):
+    """A flat icon drawn by pixel maths -- there is no image library here.
+
+    Same approach as sports-daily: cheap to generate at every size the manifest
+    asks for, and legible at 48px on a home screen.
+    """
+    bars = [(int(x * size), int(y * size), int(w * size), max(2, int(h * size)), c)
+            for x, y, w, h, c in ICON_BARS]
+    rows = []
+    for y in range(size):
+        row = bytearray([0])                    # filter byte: none
+        for x in range(size):
+            colour = ICON_BG
+            for bx, by, bw, bh, c in bars:
+                if bx <= x < bx + bw and by <= y < by + bh:
+                    colour = c
+                    break
+            row += bytes(colour)
+        rows.append(bytes(row))
+
+    def chunk(tag, data):
+        return (struct.pack(">I", len(data)) + tag + data
+                + struct.pack(">I", zlib.crc32(tag + data) & 0xFFFFFFFF))
+
+    return (PNG_SIGNATURE
+            + chunk(b"IHDR", struct.pack(">IIBBBBB", size, size, 8, 2, 0, 0, 0))
+            + chunk(b"IDAT", zlib.compress(b"".join(rows), 9))
+            + chunk(b"IEND", b""))
+
+
+ICON_SIZES = (180, 192, 512)
+
 MANIFEST = {
     "name": "Standings", "short_name": "Standings", "start_url": "./",
     "display": "standalone", "background_color": "#16161a",
     "theme_color": "#16161a",
-    "icons": [{"src": "./icon.svg", "sizes": "any", "type": "image/svg+xml"}],
+    "icons": [{"src": "icon-%d.png" % n, "sizes": "%dx%d" % (n, n),
+               "type": "image/png"} for n in ICON_SIZES],
 }
-
-ICON = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'
-        '<rect width="64" height="64" rx="13" fill="#16161a"/>'
-        '<rect x="13" y="16" width="38" height="5" rx="2.5" fill="#e0834f"/>'
-        '<rect x="13" y="29" width="26" height="5" rx="2.5" fill="#9a9a95"/>'
-        '<rect x="13" y="42" width="32" height="5" rx="2.5" fill="#9a9a95"/>'
-        '</svg>')
 
 
 def main():
@@ -616,8 +661,9 @@ def main():
         fh.write(page)
     with open(os.path.join(SITE, "manifest.webmanifest"), "w", encoding="utf-8") as fh:
         json.dump(MANIFEST, fh, indent=1)
-    with open(os.path.join(SITE, "icon.svg"), "w", encoding="utf-8") as fh:
-        fh.write(ICON)
+    for n in ICON_SIZES:
+        with open(os.path.join(SITE, "icon-%d.png" % n), "wb") as fh:
+            fh.write(_png(n))
     # Include the build time, not just the date: two builds on one day would
     # otherwise share a cache name and the old entries would survive.
     stamp = data["built"].replace("-", "") + datetime.datetime.now().strftime("%H%M%S")
