@@ -8,8 +8,10 @@ but a separate app -- these two do not share code yet.
     python site.py --all      every sport, including out of season (testing)
 """
 
+import csv
 import datetime
 import html
+import io
 import json
 import os
 import struct
@@ -28,6 +30,14 @@ SITE = os.path.join(HERE, "output", "site")
 # gives the Tigers navy, Michigan blue, the Cavaliers a muted antique gold
 # (#bc945c) rather than their actual gold, and it has no teal for the Pistons
 # at all -- only blue and red.
+#
+# This is the COMMITTED FALLBACK, not the source. The master list is the
+# `Colors` tab of the control sheet, shared with sports-daily and k-money so a
+# colour is decided once instead of drifting across three projects -- which it
+# already had: Tottenham was ffffff in sports-daily and 132257 here.
+#
+# The fallback stays because three builds read that sheet, and one outage must
+# not be able to break all three at once.
 COLORS = {
     "Detroit Lions": "0076b6", "Detroit Tigers": "fa4616",
     "Detroit Pistons": "00a3a5",        # the 1996-2001 teal, his pick
@@ -37,6 +47,50 @@ COLORS = {
     "Cornell Big Red": "b31b1b", "Tottenham Hotspur": "132257",
     "Atlanta United FC": "80000a",
 }
+
+COLORS_SHEET = "1v9ErfF8bZ-jpboTz6cHth1sZf8VlCQa2DOufH74OJmk"
+COLORS_TAB = "Colors"
+GVIZ = "https://docs.google.com/spreadsheets/d/%s/gviz/tq?tqx=out:csv&sheet=%s"
+
+
+def parse_colors(text):
+    """{team: hex} from the shared Colors tab.
+
+    The HEADER is checked, and that is not paranoia: asking Google for a tab
+    that does not exist hands back the FIRST tab instead of erroring, so
+    without this a sheet with no Colors tab is read as if some other tab were
+    team colours. A tab with the right header and no rows yet is fine.
+    """
+    if not text:
+        return {}
+    rows = list(csv.reader(io.StringIO(text)))
+    header = [(h or "").strip().lower() for h in (rows[0] if rows else [])]
+    if "team" not in header or "color" not in header:
+        print("  ! Colors tab has no Team/Color header (got %r); ignoring it"
+              % (header[:4],))
+        return {}
+    team_at, color_at = header.index("team"), header.index("color")
+    out = {}
+    for line in rows[1:]:
+        if max(team_at, color_at) >= len(line):
+            continue
+        team = (line[team_at] or "").strip()
+        value = (line[color_at] or "").strip().lstrip("#").lower()
+        if team and len(value) == 6 and all(c in "0123456789abcdef" for c in value):
+            out[team] = value
+    return out
+
+
+def load_shared_colors():
+    """Lay the shared list over COLORS. Silent no-op if it cannot be read."""
+    text = fetch.get_text(GVIZ % (COLORS_SHEET, COLORS_TAB),
+                          key="colors-tab", max_age_min=720)
+    shared = parse_colors(text)
+    if shared:
+        COLORS.update(shared)
+    print("  %d colour(s) from the shared list" % len(shared))
+    return shared
+
 
 # Which crest variant reads on a dark page, measured by logos.py. ESPN's
 # -dark variant is right for most teams but is a flat white silhouette for
@@ -667,6 +721,7 @@ MANIFEST = {
 
 def main():
     include_all = "--all" in sys.argv
+    load_shared_colors()
     data = build.build_all(include_offseason=include_all)
     os.makedirs(SITE, exist_ok=True)
     page = render(data, include_all)

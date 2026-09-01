@@ -361,6 +361,43 @@ nba = next(t for t in leagues.TABS if t["key"] == "nba")
 check("NBA is configured for one conference table",
       nba["groups"][0]["sections"], ["conference"])
 
+
+# --- the shared colour list ------------------------------------------------
+# The master list lives on the Colors tab of the control sheet and is read by
+# this project, sports-daily and k-money, so a colour is decided once. The
+# committed COLORS dict is the fallback: three builds read that sheet, and one
+# outage must not be able to break all three at once.
+import importlib.util as _ilu
+_spec = _ilu.spec_from_file_location(
+    "sitemod", os.path.join(os.path.dirname(os.path.abspath(__file__)), "site.py"))
+_site = _ilu.module_from_spec(_spec)
+_spec.loader.exec_module(_site)
+
+check("a Colors tab parses",
+      _site.parse_colors('"Team","Color"\n"Michigan Wolverines","f5b400"'),
+      {"Michigan Wolverines": "f5b400"})
+check("a leading hash is fine",
+      _site.parse_colors('"Team","Color"\n"X","#FF0000"'), {"X": "ff0000"})
+check("columns are found by name, in any order",
+      _site.parse_colors('"Color","Team"\n"f5b400","X"'), {"X": "f5b400"})
+check("a value that is not a colour is skipped",
+      _site.parse_colors('"Team","Color"\n"X","nope"\n"Y","00ff00"'),
+      {"Y": "00ff00"})
+# THE trap: asking Google for a tab that does not exist hands back the FIRST
+# tab. Without the header check this project would read someone else's tab as
+# team colours. That header is the real one off the sheet.
+check("the wrong tab is refused, not parsed",
+      _site.parse_colors('"Title DAILY","Time ","Mon "\n"Laundry","12:30 PM","x"'),
+      {})
+check("a tab with the right header and no rows is simply empty",
+      _site.parse_colors('"Team","Color"\n'), {})
+check("no response at all is empty", _site.parse_colors(None), {})
+# Every fallback colour must survive being read back as one.
+check("the committed list is all valid hex",
+      sorted(k for k, v in _site.COLORS.items()
+             if len(v) != 6 or any(c not in "0123456789abcdef" for c in v)), [])
+
+
 print("\n%d passed, %d failed" % (len(PASS), len(FAIL)))
 if FAIL:
     print("failed: %s" % ", ".join(FAIL))

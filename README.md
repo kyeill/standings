@@ -78,6 +78,31 @@ the team is nationally.
 
 As a rule of thumb a phone fits about four columns besides the team name.
 
+## Row colours
+
+Each tracked team shades its own row: its colour lightened towards white, then
+laid over the card at partial strength so the text on top stays readable. The
+lightening matters -- Tottenham navy and Cornell red are otherwise too dark to
+register against a #1e1e23 card.
+
+Several colours are deliberately NOT what ESPN returns. It gives the Tigers
+navy, Michigan blue, the Cavaliers a muted antique gold rather than their real
+one, and has no teal for the Pistons at all.
+
+Those overrides are a **master list shared with sports-daily and k-money**, read
+from the `Colors` tab of the control sheet (`Team | Color`), so a colour is
+decided once rather than in three places. It had already drifted before this:
+Tottenham was `132257` here and `ffffff` in sports-daily.
+
+`COLORS` in `site.py` stays as the **committed fallback** -- three builds read
+that tab now, and one outage must not be able to break all three. The header is
+checked, because asking Google for a tab that does not exist hands back the
+*first* tab, and an unchecked read would parse some other tab as team colours.
+
+**Note the two uses differ.** Here a colour is a row WASH; in sports-daily it is
+a 3px stripe. A value that reads well as a thin stripe can be weak spread across
+a row, which is why these had diverged in the first place.
+
 ## Crests
 
 ESPN publishes two variants per team and the `-dark` one is usually right on a
