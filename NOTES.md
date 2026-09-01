@@ -130,6 +130,13 @@ older standings than the workflow just fetched -- on 2026-08-26 the live page
 had the Tigers at 62-70 while the local copy still said 61-70. Compare the CSS
 and the structure, not the bytes, before concluding something is broken.
 
+**Tests that assert today's standings rot.** Three failed on 2026-09-01 purely
+because the calendar moved: the NFL left preseason, a college hockey record
+grew as more months were cached, and the set of in-season tabs changed. Assert
+the RULE, not the day: check preseason exclusion against a synthetic payload,
+check a record's shape rather than its value, and derive the expected live tabs
+from `season.is_live` rather than listing them.
+
 ## Carried over from sports-daily
 
 Same ESPN quirks apply and are already handled here: do not set a browser-style

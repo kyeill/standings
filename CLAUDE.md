@@ -13,7 +13,7 @@ python site.py           build the app into output/site/  (in-season only)
 python site.py --all     keep every sport, for working out of season
 python build.py          print what each tab resolved to, no HTML
 python logos.py --write  re-measure crest variants when teams change
-python selftest.py       96 assertions -- run before trusting any change
+python selftest.py       100 assertions -- run before trusting any change
 ```
 
 Python is not on PATH:
