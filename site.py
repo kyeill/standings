@@ -73,7 +73,7 @@ body{margin:0;background:var(--bg);color:var(--ink);
 .wrap{max-width:720px;margin:0 auto;padding:0 14px 70px}
 header{padding:18px 0 10px}
 h1{font-size:20px;margin:0}
-h1 span{color:var(--muted);font-weight:400;font-size:14px;margin-left:8px}
+.updated{color:var(--muted);font-size:14px;margin-top:2px}
 nav{position:sticky;top:0;z-index:5;background:var(--bg);
     border-bottom:1px solid var(--line);margin:0 -14px;padding:0 8px;
     display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
@@ -143,7 +143,7 @@ footer{margin-top:34px;color:var(--muted);font-size:12px;
   .wrap{max-width:860px;padding:0 16px 80px}
   header{padding:24px 0 12px}
   h1{font-size:26px;letter-spacing:-0.01em}
-  h1 span{font-size:14px}
+  .updated{font-size:15px;margin-top:3px}
   nav{margin:0 -16px;padding:0 10px}
   nav button{font-size:15px;padding:12px 15px}
   section{padding-top:18px}
@@ -585,7 +585,8 @@ def render(data, include_all=False):
             '<link rel="apple-touch-icon" href="./icon-180.png">'
             '<title>Standings</title>' + FONT +
             '<style>%s</style>'
-            '<div class="wrap"><header><h1>Standings<span>%s</span></h1></header>'
+            '<div class="wrap"><header><h1>Standings</h1>'
+            '<div class="updated">Updated %s</div></header>'
             '<nav>%s</nav>%s%s'
             '<footer>Standings from ESPN. Playoff odds: ESPN FPI for the NFL, '
             'BPI for the NBA, the MLB standings feed, and Hockey-Reference for '
@@ -596,7 +597,10 @@ def render(data, include_all=False):
 
 
 def pretty(iso):
-    return datetime.date.fromisoformat(iso).strftime("%d %b %Y")
+    """"September 1" -- no leading zero, which %-d would give but does not
+    exist on Windows."""
+    day = datetime.date.fromisoformat(iso)
+    return "%s %d" % (day.strftime("%B"), day.day)
 
 
 PNG_SIGNATURE = bytes([137, 80, 78, 71, 13, 10, 26, 10])
