@@ -89,19 +89,15 @@ Several colours are deliberately NOT what ESPN returns. It gives the Tigers
 navy, Michigan blue, the Cavaliers a muted antique gold rather than their real
 one, and has no teal for the Pistons at all.
 
-Those overrides are a **master list shared with sports-daily and k-money**, read
-from the `Colors` tab of the control sheet (`Team | Color`), so a colour is
-decided once rather than in three places. It had already drifted before this:
-Tottenham was `132257` here and `ffffff` in sports-daily.
+**These are local on purpose, and are NOT read from the shared `Colors` tab**
+that sports-daily and k-money use. It was wired up to that tab and then pulled
+back out, because the two uses want different answers: those pages draw a **3px
+stripe** beside a card, this draws a **wash across a whole table row**. A navy
+that reads as a crisp edge disappears once it is spread out and lightened, and
+sharing the list turned the Tigers navy and Tottenham near-white here.
 
-`COLORS` in `site.py` stays as the **committed fallback** -- three builds read
-that tab now, and one outage must not be able to break all three. The header is
-checked, because asking Google for a tab that does not exist hands back the
-*first* tab, and an unchecked read would parse some other tab as team colours.
-
-**Note the two uses differ.** Here a colour is a row WASH; in sports-daily it is
-a 3px stripe. A value that reads well as a thin stripe can be weak spread across
-a row, which is why these had diverged in the first place.
+That is why the two lists diverged in the first place. Do not fix it by
+pointing this at the shared tab -- it has been tried.
 
 ## Crests
 
