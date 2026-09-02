@@ -50,7 +50,32 @@ COLORS = {
 # -dark variant is right for most teams but is a flat white silhouette for
 # some (Liverpool and Tottenham are both pure white), so those keep the
 # default. Regenerate with `python logos.py --write` when teams change.
+# sports-daily is the generator: its `logos.py --write` measures the actual
+# pixels of both crest variants and records which teams need the default one.
+# Pulled from its repo so the pages cannot drift -- his call 2026-08-30. Unlike
+# the row COLOURS, which stay local here because a wash and a stripe want
+# different answers, a crest either reads on a dark page or it does not, and
+# that judgement is the same everywhere.
+LOGO_SOURCE = ("https://raw.githubusercontent.com/kyeill/sports-daily/"
+               "main/config.json")
+
+
 def _load_overrides():
+    """sports-daily's list, falling back to the copy committed here.
+
+    That copy is the FALLBACK, not the source: a GitHub blip must not silently
+    change every crest on the page, and a list a few days old beats one that
+    cannot be read at all.
+    """
+    shared = {}
+    try:
+        text = fetch.get_text(LOGO_SOURCE, key="sd-config", max_age_min=720)
+        shared = (json.loads(text) or {}).get("logo_overrides") or {}
+    except Exception as exc:
+        print("  ! sports-daily logo list unreadable (%s)" % exc)
+    if shared:
+        print("  %d logo override(s) from sports-daily" % len(shared))
+        return shared
     path = os.path.join(HERE, "logo-overrides.json")
     try:
         with open(path, encoding="utf-8") as fh:

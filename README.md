@@ -106,7 +106,16 @@ dark page -- but for some clubs it is a flat white silhouette, so Liverpool and
 Tottenham become indistinguishable at 19px. `logos.py` measures the actual
 pixels of both and picks per team, exactly as sports-daily does: the dark
 variant when it carries colour, otherwise the default if it is light enough,
-otherwise the dark one anyway. The 15 exceptions live in `logo-overrides.json`,
+otherwise the dark one anyway.
+
+**The exception list now comes from sports-daily**, pulled from its repo at
+build time: its `logos.py` is the generator, and a crest either reads on a dark
+page or it does not -- that judgement is the same on both sites, unlike the row
+COLOURS, which stay local here because a wash and a stripe want different
+answers. Its list is 77 teams against the 15 measured here, and the two agreed
+on 14 of those 15; Coventry City is the only one that changes.
+
+`logo-overrides.json` here is the committed FALLBACK,
 which the build just reads -- re-run `python logos.py --write` when the tracked
 teams change. The default variant is always the `onerror` fallback, since a few
 teams have no dark file at all.
