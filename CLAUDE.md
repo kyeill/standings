@@ -32,6 +32,11 @@ Two standing preferences of his, easy to miss:
 
 * End every reply with a clearly marked section of outstanding **questions**,
   plus key notes and action items. Buried asks get lost.
+* **Anything he must paste, SHIP THE CODE WITH THE ASK.** Never write
+  "redeploy the script" on its own -- a redeploy publishes whatever is already
+  in the editor, so without the code nothing changes. Attach the whole file when
+  it has moved a lot; give the exact before/after block when it is small, which
+  also avoids a paste wiping his credentials.
 * **Verify by running things.** Most of the trap list came from code that
   looked obviously correct.
 
