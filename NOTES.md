@@ -158,19 +158,28 @@ Every `scoreboard?dates=YYYYMMDD-YYYYMMDD` call now answers
 date at all still work. Found 2026-09-18 while fixing the same thing in
 k-money, where it had silently emptied a whole team out of a tab.
 
-**Here the builds stayed green and the page stayed mostly right**, which is why
-nobody noticed. Three things were in different states:
+**Here the builds stayed green and the page stayed right** -- by luck in one
+case -- which is why nobody noticed. Three things were in different states:
 
 **`season.is_live()` survived by accident.** It already fell back to sampling
 single days when the range failed -- written originally because college
 basketball 404s on wide ranges. But it sampled only today, +/-3 and +/-7, and
 from a Friday that skips both Thursdays: the Europa League plays Thursdays.
 
-**`season.current_phase()` had no fallback, and was broken on the live page.**
-It returned an empty set, so every European competition was dropped as "not in
-its league phase" -- while the Champions League and Europa League were BOTH
-mid-phase, eighteen games each within ten days. Their tables were simply
-missing from the EPL tab.
+**`season.current_phase()` had no fallback -- broken, but LATENT.** It returned
+an empty set, so every European competition would be dropped as "not in its
+league phase", while the Champions League and Europa League were both
+mid-phase, eighteen games each within ten days.
+
+That did NOT change the page this season, and the first write-up (and the
+commit "Survive ESPN dropping date ranges; restore the European tables") got
+this wrong. Each European group is `teams: [SPURS]`, `optional: True`: its table
+appears only if Tottenham is IN that competition, and in 2026-27 they are in
+none -- ESPN lists zero European games for them. So the broken phase check and
+the correct answer both came out as "no European table". It would have bitten
+in the first season Spurs qualify, silently, which is still worth the fix; it
+was not the live outage it was first called. **Check the group's own
+conditions before calling a missing table a bug.**
 
 **`chockey.py` would have broken in October.** It read the season a month at a
 time with ranges; out of season, nothing called it yet.
