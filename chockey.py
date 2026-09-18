@@ -24,14 +24,39 @@ table is ordered by win percentage counting a tie as half a win.
 
 import collections
 import datetime
+import re
 
 import fetch
 
 CORE = ("https://sports.core.api.espn.com/v2/sports/hockey/leagues/"
         "mens-college-hockey/seasons/%s/types/2/groups")
-SCOREBOARD = ("https://site.api.espn.com/apis/site/v2/sports/hockey/"
-              "mens-college-hockey/scoreboard")
+# Each team's own schedule, NOT the scoreboard. The scoreboard used to be read
+# a month at a time with a date range; in September 2026 ESPN stopped accepting
+# ranges at all (400 "Failed to get events endpoint"), and a whole season one
+# day at a time would be ~200 calls. Team schedules are one call each.
+SCHEDULE = ("https://site.api.espn.com/apis/site/v2/sports/hockey/"
+            "mens-college-hockey/teams/%s/schedule")
 MONTH_CACHE = 60 * 24 * 7      # a finished month never changes
+
+# A conference TOURNAMENT game, told apart by its note. ESPN files these under
+# the REGULAR SEASON -- seasontype 2 -- so the season type cannot exclude them:
+# Cornell's 2025-26 schedule carries four "ECAC - Quarterfinal" and
+# "ECAC - Semifinal" games at type 2, which turned a verified 14-6-2
+# conference record into 16-8-2. Conference standings are the regular
+# season's table; the tournament is played after it is settled.
+# "round" covers every way ESPN numbers one -- "ECAC - 1st Round" slipped past a
+# pattern that only knew "first round" and added a playoff game to half the
+# ECAC's regular-season records.
+TOURNAMENT = re.compile(r"quarterfinal|semifinal|final|championship|"
+                        r"\bround\b|play-?in|tournament", re.I)
+
+# KNOWN LIMIT, inherited rather than introduced: ESPN marks nothing that tells
+# a NON-conference game between two conference members from a conference one
+# -- no conferenceId on the scoreboard, no conferenceCompetition flag on the
+# team schedule. So such a game is counted. In 2025-26 that left several ECAC
+# teams one game over their 22 (Yale met Dartmouth three times, once before
+# conference play began). Cornell played none, which is why its row verifies
+# exactly; the Big Ten had none at all, and every team lands on 24.
 LIVE_CACHE = 60 * 3
 
 
@@ -142,18 +167,45 @@ def conference_map(year, ):
     return out, names
 
 
-def _ranges(year, today=None):
-    """Month-sized windows covering the season so far."""
+def _score(side):
+    """A competitor's score as an int, whichever shape ESPN sent it in.
+
+    The scoreboard sends "3"; the team SCHEDULE sends {"value": 3.0,
+    "displayValue": "3"}. int() on the dict raises TypeError, which the loop
+    below catches and skips -- so without this every game of the season would
+    be silently discarded and every record would read 0-0-0.
+    """
+    score = side.get("score")
+    if isinstance(score, dict):
+        score = score.get("value", score.get("displayValue"))
+    return int(float(score))
+
+
+def _season_events(year, team_ids, today=None):
+    """Every game of the season involving any of these teams, each ONCE.
+
+    A game between two tracked teams appears in both teams' schedules, so it is
+    kept by event id -- counting it twice would give both sides a double result.
+
+    The season YEAR is named here, unlike the K Money Teams tab where naming it
+    was a trap. This module computes one specific season's table (the one
+    season_year() picked, and the one conference_map() was built for), so the
+    year is the question being asked, not a fallback.
+
+    Regular season only: conference standings are a regular-season table, and
+    the conference tournament is not part of it.
+    """
     today = today or datetime.date.today()
-    start = datetime.date(year, 10, 1)
-    end = min(max(today, start), datetime.date(year + 1, 4, 30))
-    out, cursor = [], start
-    while cursor <= end:
-        nxt = (cursor.replace(day=28) + datetime.timedelta(days=7)).replace(day=1)
-        stop = min(nxt - datetime.timedelta(days=1), end)
-        out.append((cursor, stop))
-        cursor = nxt
-    return out
+    finished = today > datetime.date(year + 1, 4, 30)
+    events = {}
+    for tid in team_ids:
+        data = fetch.get(SCHEDULE % tid, {"season": year + 1, "seasontype": 2},
+                         key="chockey-sched-%s-%s" % (year, tid),
+                         max_age_min=MONTH_CACHE if finished else LIVE_CACHE)
+        for event in (data or {}).get("events") or []:
+            if event.get("id"):
+                events.setdefault(event["id"], event)
+    return list(events.values())
 
 
 def standings(today=None):
@@ -167,35 +219,34 @@ def standings(today=None):
     conf_rec = collections.defaultdict(lambda: [0, 0, 0])
     all_rec = collections.defaultdict(lambda: [0, 0, 0])
     meta = {}
-    for lo, hi in _ranges(year, today):
-        finished = hi < today
-        data = fetch.get(SCOREBOARD,
-                         {"dates": "%s-%s" % (lo.strftime("%Y%m%d"),
-                                              hi.strftime("%Y%m%d")),
-                          "limit": 900},
-                         key="chockey-games-%s" % lo.strftime("%Y%m"),
-                         max_age_min=MONTH_CACHE if finished else LIVE_CACHE)
-        for event in (data or {}).get("events") or []:
-            comp = (event.get("competitions") or [{}])[0]
-            sides = comp.get("competitors") or []
-            if len(sides) != 2:
+    for event in _season_events(year, list(conf_of), today):
+        comp = (event.get("competitions") or [{}])[0]
+        sides = comp.get("competitors") or []
+        if len(sides) != 2:
+            continue
+        if not (comp.get("status") or {}).get("type", {}).get("completed"):
+            continue
+        # Skipped entirely rather than just kept out of the conference column.
+        # The only record either hockey table SHOWS is the conference one --
+        # both groups set drop_overall in leagues.py -- so this keeps the
+        # overall figure a regular-season number too rather than a mixture.
+        if any(TOURNAMENT.search(note.get("headline") or "")
+               for note in comp.get("notes") or []):
+            continue
+        ids = [str((s.get("team") or {}).get("id")) for s in sides]
+        same = conf_of.get(ids[0]) and conf_of.get(ids[0]) == conf_of.get(ids[1])
+        for side, other in ((sides[0], sides[1]), (sides[1], sides[0])):
+            team = side.get("team") or {}
+            tid = str(team.get("id"))
+            meta.setdefault(tid, team)
+            try:
+                mine, theirs = _score(side), _score(other)
+            except (TypeError, ValueError):
                 continue
-            if not (comp.get("status") or {}).get("type", {}).get("completed"):
-                continue
-            ids = [str((s.get("team") or {}).get("id")) for s in sides]
-            same = conf_of.get(ids[0]) and conf_of.get(ids[0]) == conf_of.get(ids[1])
-            for side, other in ((sides[0], sides[1]), (sides[1], sides[0])):
-                team = side.get("team") or {}
-                tid = str(team.get("id"))
-                meta.setdefault(tid, team)
-                try:
-                    mine, theirs = int(side.get("score")), int(other.get("score"))
-                except (TypeError, ValueError):
-                    continue
-                slot = 0 if mine > theirs else 1 if mine < theirs else 2
-                all_rec[tid][slot] += 1
-                if same:
-                    conf_rec[tid][slot] += 1
+            slot = 0 if mine > theirs else 1 if mine < theirs else 2
+            all_rec[tid][slot] += 1
+            if same:
+                conf_rec[tid][slot] += 1
 
     ranks = npi_ranks()
     rows = []

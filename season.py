@@ -22,66 +22,79 @@ WINDOW_DAYS = 10
 CACHE_MINUTES = 60 * 6
 
 
+def _around(league_path, today, window, params=None):
+    """Events from single days, walking OUTWARD from today: 0, -1, +1, -2, +2...
+
+    This was one ranged call across the whole window. In September 2026 ESPN
+    stopped accepting date RANGES on the scoreboard at all -- any league, any
+    length, a single week included -- answering
+
+        400 {"code":400,"message":"Failed to get events endpoint."}
+
+    A single day still works. So each day is its own call, nearest first, and
+    the caller stops the moment it has an answer: an in-season league usually
+    settles on day 0 or 1. Each day is cached separately and is_live() and
+    current_phase() share the cache, so asking both costs nothing extra.
+
+    EVERY day, not a sample. The old fallback sampled today and +/-3 and +/-7,
+    which misses any competition that plays one fixed weekday: from a Friday,
+    the Europa League's Thursdays sit at -1 and +6, and neither was checked.
+    """
+    extra = "".join("-%s%s" % (k, v) for k, v in sorted((params or {}).items()))
+    base = league_path.replace("/", "-")
+    for dist in range(window + 1):
+        for offset in ((0,) if dist == 0 else (-dist, dist)):
+            day = (today + datetime.timedelta(days=offset)).strftime("%Y%m%d")
+            query = {"dates": day, "limit": 400}
+            query.update(params or {})
+            data = fetch.get(SCOREBOARD % league_path, query,
+                             key="day-%s-%s%s" % (base, day, extra),
+                             max_age_min=CACHE_MINUTES)
+            for event in (data or {}).get("events") or []:
+                yield event
+
+
+def _real(event):
+    """A game that counts: not preseason, not a friendly, not an all-star."""
+    season = event.get("season") or {}
+    slug = (season.get("slug") or "").lower()
+    if season.get("type") == 1 or "preseason" in slug:
+        return False
+    return not ("friendly" in slug or "all-star" in slug)
+
+
 def is_live(league_path, today=None, window=WINDOW_DAYS, params=None):
     """True when real (non-preseason) games fall within +/- window days."""
     today = today or datetime.date.today()
-    lo = (today - datetime.timedelta(days=window)).strftime("%Y%m%d")
-    hi = (today + datetime.timedelta(days=window)).strftime("%Y%m%d")
-    query = {"dates": "%s-%s" % (lo, hi), "limit": 400}
-    if params:
-        query.update(params)
-    data = fetch.get(SCOREBOARD % league_path, query,
-                     key="season-%s-%s" % (league_path.replace("/", "-"), lo),
-                     max_age_min=CACHE_MINUTES)
-    if data is None:
-        # College basketball 404s on a wide date range where every other
-        # league accepts one. Fall back to sampling single days across the
-        # same window rather than reading the error as "out of season".
-        # The range attempt is expected to fail here, so it must not be
-        # reported to the user as a data outage.
-        key = "season-%s-%s" % (league_path.replace("/", "-"), lo)
-        if key in fetch.FAILURES:
-            fetch.FAILURES.remove(key)
-        data = {"events": []}
-        for offset in (0, -7, 7, -3, 3):
-            day = (today + datetime.timedelta(days=offset)).strftime("%Y%m%d")
-            single = fetch.get(SCOREBOARD % league_path,
-                               dict(query, dates=day),
-                               key="season1-%s-%s" % (
-                                   league_path.replace("/", "-"), day),
-                               max_age_min=CACHE_MINUTES)
-            if single and (single.get("events") or []):
-                data = single
-                break
-    for event in data.get("events") or []:
-        season = event.get("season") or {}
-        slug = (season.get("slug") or "").lower()
-        if season.get("type") == 1 or "preseason" in slug:
-            continue
-        if "friendly" in slug or "all-star" in slug:
-            continue
-        return True
-    return False
-
+    return any(_real(e) for e in _around(league_path, today, window, params))
 
 
 def current_phase(league_path, today=None, window=WINDOW_DAYS):
-    """The set of season slugs with games around today.
+    """The season slugs of the games NEAREST today.
 
     A European competition only HAS a table during its league phase; once the
     knockout rounds start there is nothing to stand in a table, so the tab has
     to drop it rather than keep showing a frozen final table.
+
+    Nearest-first is the right reading of "current": at the turn from league
+    phase to knockouts, the games closest to today are the phase that is
+    actually under way. It also stops early, where a whole-window scan would
+    cost twenty-one calls per competition.
+
+    This had NO fallback when the ranged call began failing, so it returned an
+    empty set -- and every European table was dropped as "not in its league
+    phase" while the Champions League and Europa League were both mid-phase.
     """
     today = today or datetime.date.today()
-    lo = (today - datetime.timedelta(days=window)).strftime("%Y%m%d")
-    hi = (today + datetime.timedelta(days=window)).strftime("%Y%m%d")
-    data = fetch.get(SCOREBOARD % league_path,
-                     {"dates": "%s-%s" % (lo, hi), "limit": 400},
-                     key="season-%s-%s" % (league_path.replace("/", "-"), lo),
-                     max_age_min=CACHE_MINUTES)
-    slugs = set()
-    for event in (data or {}).get("events") or []:
-        slug = ((event.get("season") or {}).get("slug") or "").lower()
-        if slug:
-            slugs.add(slug)
+    slugs, nearest = set(), None
+    for dist in range(window + 1):
+        for offset in ((0,) if dist == 0 else (-dist, dist)):
+            day = today + datetime.timedelta(days=offset)
+            for event in _around(league_path, day, 0):
+                slug = ((event.get("season") or {}).get("slug") or "").lower()
+                if slug:
+                    slugs.add(slug)
+                    nearest = dist
+        if nearest is not None:
+            return slugs
     return slugs

@@ -66,8 +66,10 @@ LAST occurrence, which is a split, not the overall figure. Take the first.
 
 **College hockey standings are empty everywhere in ESPN** -- site API and core
 API both return zero entries for every conference. They are now DERIVED in
-`chockey.py` from completed game results, which was validated against the
-finished 2025-26 season (a correct 12-team ECAC and 7-team Big Ten table).
+`chockey.py` from completed game results, validated against the finished
+2025-26 season: Cornell 14-6-2 in the ECAC, and every Big Ten team on exactly
+the 24 games a seven-team league plays. (The first validation recorded
+Michigan at 15-6-2; that was one game SHORT, and the rebuild below found it.)
 Two traps in doing so: the college hockey scoreboard carries **no
 conferenceId at all**, so membership has to come from the core API's group
 listing; and **ESPN calls the ECAC "East Coast Athletic Conference"**, so a
@@ -143,3 +145,71 @@ Same ESPN quirks apply and are already handled here: do not set a browser-style
 User-Agent (403), use the `/500-dark/` logo variant on a dark background with an
 `onerror` fallback, and override ESPN's team colours for the Tigers (navy) and
 Michigan (blue).
+
+## ESPN stopped accepting date ranges, September 2026
+
+Every `scoreboard?dates=YYYYMMDD-YYYYMMDD` call now answers
+
+```
+400 {"code":400,"message":"Failed to get events endpoint."}
+```
+
+-- any league, any length (a single week fails), while a single day and no
+date at all still work. Found 2026-09-18 while fixing the same thing in
+k-money, where it had silently emptied a whole team out of a tab.
+
+**Here the builds stayed green and the page stayed mostly right**, which is why
+nobody noticed. Three things were in different states:
+
+**`season.is_live()` survived by accident.** It already fell back to sampling
+single days when the range failed -- written originally because college
+basketball 404s on wide ranges. But it sampled only today, +/-3 and +/-7, and
+from a Friday that skips both Thursdays: the Europa League plays Thursdays.
+
+**`season.current_phase()` had no fallback, and was broken on the live page.**
+It returned an empty set, so every European competition was dropped as "not in
+its league phase" -- while the Champions League and Europa League were BOTH
+mid-phase, eighteen games each within ten days. Their tables were simply
+missing from the EPL tab.
+
+**`chockey.py` would have broken in October.** It read the season a month at a
+time with ranges; out of season, nothing called it yet.
+
+What replaced them:
+
+* `season._around()` fetches single days walking OUTWARD from today -- 0, -1,
+  +1, -2, +2 -- EVERY day rather than a sample, and callers stop the moment they
+  have an answer. An in-season league usually settles on day 0 or 1. Days are
+  cached individually and shared, so `is_live()` and `current_phase()` asking
+  about the same league cost nothing extra.
+* `chockey.py` reads each team's own schedule (63 calls, one per D1 team) and
+  keeps each game ONCE by event id, since a game between two teams appears in
+  both teams' schedules.
+
+### Three more traps the schedule endpoint brought with it
+
+**Scores are objects, not strings.** The schedule sends
+`{"value": 3.0, "displayValue": "3"}` where the scoreboard sent `"3"`. `int()` on
+the dict raises, the loop catches and skips, and every record would have read
+0-0-0 without a single error. `_score()` takes either shape.
+
+**Conference tournament games are filed as REGULAR SEASON.** Cornell's 2025-26
+schedule carries four ECAC playoff games at seasontype 2. Only the competition
+note tells them apart -- `"ECAC - Quarterfinal"`, and, easy to miss,
+`"ECAC - 1st Round"` rather than "first round". `TOURNAMENT` matches `round` for
+that reason.
+
+**Nothing marks a non-conference game between two conference members.** No
+`conferenceId` on the scoreboard, no `conferenceCompetition` on the schedule. So
+such a game is counted as a conference game. The old scoreboard method had the
+identical blind spot. In 2025-26 it leaves six ECAC teams one game over their 22
+(Yale met Dartmouth three times, once before conference play began); Cornell
+played none, which is why its row verifies exactly, and the Big Ten had none.
+
+### A tooling trap, for whoever edits this next
+
+A patch written inline through a bash heredoc turned `r"\bround\b"` into
+`r"<backspace>round<backspace>"` -- a non-raw Python string read `\b` as a
+backspace character. The regex compiled, matched nothing, and the Read tool
+displays the file without showing the control characters. It was caught only
+because the ECAC game counts refused to move. Write patch scripts as files.

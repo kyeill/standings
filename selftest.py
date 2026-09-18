@@ -121,8 +121,49 @@ try:
           season.is_live("football/nfl", today), True)
     fetch.get = _fake([{"season": {"type": 2, "slug": "fifa.friendly"}}])
     check("a friendly does not count", season.is_live("soccer/eng.1", today), False)
+
+    # ESPN stopped accepting date RANGES on the scoreboard in September 2026 --
+    # any league, any length, 400 "Failed to get events endpoint". Every call
+    # must now be a single day, walked outward from today.
+    asked = []
+    def _record(url, params=None, **k):
+        asked.append((params or {}).get("dates"))
+        return {"events": []}
+    fetch.get = _record
+    season.is_live("soccer/uefa.europa", datetime.date(2026, 9, 18))
+    check("no call asks for a date range",
+          [d for d in asked if d and "-" in d], [])
+    check("the walk starts at today", asked[0], "20260918")
+    check("and goes nearest first", asked[1:3], ["20260917", "20260919"])
+    # The old fallback sampled today, +/-3 and +/-7. From a Friday that misses
+    # the Europa League's Thursdays at -1 and +6, and it missed them.
+    check("every day of the window is checked when nothing is found",
+          len(asked), 2 * season.WINDOW_DAYS + 1)
+
+    # current_phase() had NO fallback when ranges broke, returned an empty set,
+    # and every European table was dropped as "not in its league phase" while
+    # the Champions League and Europa League were both mid-phase.
+    fetch.get = _fake([{"season": {"type": 2, "slug": "league-phase"}}])
+    check("the league phase is found from single days",
+          season.current_phase("soccer/uefa.champions", today), {"league-phase"})
 finally:
     fetch.get = _real_get
+
+print("\ncollege hockey parsing  [offline]")
+# The team schedule sends a score as {"value": 3.0, "displayValue": "3"}; the
+# scoreboard sent "3". int() on the dict raises, the loop skips it, and every
+# record in the table would silently read 0-0-0.
+check("a schedule-shaped score parses",
+      chockey._score({"score": {"value": 4.0, "displayValue": "4"}}), 4)
+check("a scoreboard-shaped score still parses", chockey._score({"score": "2"}), 2)
+# ESPN files conference TOURNAMENT games under the regular season, so only the
+# note tells them apart -- and it writes "1st Round", not "first round".
+for note in ("ECAC - 1st Round", "ECAC - Quarterfinal", "ECAC - Semifinal",
+             "Big Ten - Championship", "Big Ten - Opening Round"):
+    check("a tournament game is recognised: %s" % note,
+          bool(chockey.TOURNAMENT.search(note)), True)
+check("an ordinary game with no note is not",
+      bool(chockey.TOURNAMENT.search("")), False)
 
 print("\ncollege hockey derivation  [LIVE]")
 rows = chockey.standings(datetime.date(2026, 4, 20))
@@ -133,6 +174,24 @@ check("ECAC has 12 teams", len(ecac), 12)
 check("Big Ten has 7 teams", len(b1g), 7)
 cornell = next((r for r in rows if "Cornell" in r["team"]), None)
 check("Cornell is found", bool(cornell), True)
+# Verified against the finished 2025-26 season. The ranged-scoreboard method
+# this replaced had Michigan at 15-6-2, one game short of the 24 a seven-team
+# Big Ten plays; every Big Ten team now lands on exactly 24.
+if cornell:
+    check("Cornell's 2025-26 ECAC record", cornell["stats"]["vs. Conf."], "14-6-2")
+michigan = next((r for r in rows if r["team"] == "Michigan Wolverines"), None)
+if michigan:
+    check("Michigan's 2025-26 Big Ten record",
+          michigan["stats"]["vs. Conf."], "16-6-2")
+check("every Big Ten team plays the full 24",
+      sorted({r["stats"]["wins"] + r["stats"]["losses"] + r["stats"]["ties"]
+              for r in b1g}), [24])
+# Tournament games excluded: nobody may exceed 22 + 1. The +1 is the known
+# limit -- ESPN marks nothing that separates a non-conference game between two
+# ECAC members, so such a game is counted, as it always was.
+check("no ECAC record carries a playoff game",
+      max(r["stats"]["wins"] + r["stats"]["losses"] + r["stats"]["ties"]
+          for r in ecac) <= 23, True)
 if cornell:
     import re as _re
     check("Cornell has a W-L-T conference record",

@@ -11,7 +11,7 @@ python site.py --all     same, but keep every sport, for testing
 python build.py          print what each tab resolved to, no HTML
 python mock.py           the three original design mockups
 python logos.py --write  re-measure which crest variant reads (rarely)
-python selftest.py       check the back end (100 assertions)
+python selftest.py       check the back end (117 assertions)
 ```
 
 Python is not on PATH:
@@ -176,7 +176,8 @@ team's odds are moved onto the table that IS drawn, or they would vanish.
 
 A sport that is not currently being played is dropped entirely -- tab and all.
 `season.py` decides by asking the scoreboard whether real games fall within ten
-days, which is the only reliable test: an out-of-season league does not return
+days -- one day at a time, walking outward from today, because ESPN no longer
+accepts a date range (see NOTES). That is the only reliable test: an out-of-season league does not return
 an empty table, it returns either last season's final standings (the NBA and
 NHL today) or an all-zero table for a season that has not started (college
 football today). **Preseason counts as off** -- without that the NFL shows
