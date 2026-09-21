@@ -282,6 +282,43 @@ def _extra_column(group, pool):
     return None, {}
 
 
+def _pct(record):
+    """Win percentage of a "W-L" or "W-L-T" string; None if unreadable."""
+    try:
+        parts = [int(x) for x in str(record).split(",")[0].split("-")]
+    except ValueError:
+        return None
+    w, l = parts[0], parts[1]
+    t = parts[2] if len(parts) > 2 else 0
+    games = w + l + t
+    return (w + t / 2) / games if games else None
+
+
+def _non_conf(row):
+    """The non-conference record's win percentage: overall minus conference."""
+    try:
+        ow, ol = [int(x) for x in str(row["record"]).split("-")[:2]]
+        cw, cl = [int(x) for x in str(row["conf_record"]).split("-")[:2]]
+    except (ValueError, KeyError):
+        return None
+    games = (ow - cw) + (ol - cl)
+    return (ow - cw) / games if games > 0 else None
+
+
+def _college_key(row, metric):
+    """Conference record first; then his tiebreakers. metric is "high" when a
+    bigger extra column is better (CFP odds), "low" when smaller is (seed)."""
+    conf = _pct(row["conf_record"]) or 0
+    extra = row.get("extra")
+    if extra is None:
+        extra_key = float("inf")
+    else:
+        extra_key = -extra if metric == "high" else extra
+    non_conf = _non_conf(row)
+    return (-conf, row.get("poll") or 999, extra_key,
+            -(non_conf if non_conf is not None else -1), row["team"])
+
+
 def table(group, today):
     """The college and soccer view: a straight standings table."""
     unit = group["unit"]
@@ -317,10 +354,14 @@ def table(group, today):
                        else (poll_rank.get(str(r.get("id") or "")) or {}).get("rank"))
         out_rows.append(row)
 
-    # Before a college season starts every conference record is 0-0, so the
-    # table comes out in whatever order ESPN felt like. Fall back to the poll
-    # in that case: ranked teams first, in rank order, then the rest by name.
-    if poll_rank and len({(r["wins"], r["losses"]) for r in out_rows}) == 1:
+    # Football and basketball break a tie on conference record his way
+    # (2026-09-21): the AP/CFP rank, then the metric column (CFP odds, higher
+    # first; projected seed, lower first), then the non-conference record.
+    # Before a season starts every record is 0-0, so this is also what orders
+    # a preseason table.
+    if group.get("tiebreak"):
+        out_rows.sort(key=lambda r: _college_key(r, group["tiebreak"]))
+    elif poll_rank and len({(r["wins"], r["losses"]) for r in out_rows}) == 1:
         out_rows.sort(key=lambda r: (r["poll"] or 999, r["team"]))
     for i, row in enumerate(out_rows):
         row["rank"] = i + 1

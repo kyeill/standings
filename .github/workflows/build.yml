@@ -51,20 +51,26 @@ jobs:
           else
             echo "run=yes" >> "$GITHUB_OUTPUT"
           fi
+      # History: write any season that has finished since the last run into
+      # rankings/seasons/. Nothing to do on almost every day; never allowed
+      # to stop the build.
+      - name: Fill finished seasons
+        if: steps.gate.outputs.run == 'yes'
+        run: python fill.py || echo "fill failed -- building with what is there"
       - name: Build
         if: steps.gate.outputs.run == 'yes'
         run: |
           python site.py
           TZ=America/New_York date +%F > output/history/_last_build.txt
-      - name: Commit odds history
+      - name: Commit odds history and filled seasons
         if: steps.gate.outputs.run == 'yes'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f output/history
+          git add -f output/history rankings/seasons
           # [skip ci] is essential: without it this push retriggers the
           # workflow forever.
-          git diff --staged --quiet || git commit -m "Record odds history [skip ci]"
+          git diff --staged --quiet || git commit -m "Record odds history and seasons [skip ci]"
           git push
       - uses: actions/upload-pages-artifact@v3
         if: steps.gate.outputs.run == 'yes'

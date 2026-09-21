@@ -222,3 +222,104 @@ A patch written inline through a bash heredoc turned `r"\bround\b"` into
 backspace character. The regex compiled, matched nothing, and the Read tool
 displays the file without showing the control characters. It was caught only
 because the ECAC game counts refused to move. Write patch scripts as files.
+
+## The rankings sheet, ported (2026-09-21)
+
+`rankings.py` replaces Kyle's rankings spreadsheet. What it took to get every
+displayed cell to match, so nobody re-derives it:
+
+**Formulas only come with the xlsx export.** CSV and gviz give values. The
+xlsx (`export?format=xlsx`) has both, and openpyxl reads it -- installed
+locally, NOT in the workflow; only `import_sheet.py` needs it.
+
+**Named functions do not survive the export at all.** EPL_RESULT,
+MLS_RESULT, CONCACAF_RESULT and CONCACAF_COMPETITION are Sheets named
+functions; the xlsx carries the call and no definition. They were rebuilt
+from what they displayed. If one ever disagrees with the sheet, ask him to
+paste the definition (Data > Named functions).
+
+**Sheets quirks the port had to copy, then undo:**
+
+* SUM, MAX, SMALL, LARGE and COUNT skip a number stored as TEXT, but
+  arithmetic coerces it. The import marks text-numbers with a leading
+  apostrophe so compat mode can tell; the whole 2024 and 2023 SP+ columns
+  were text.
+* `""` compares GREATER than any number, and IFERROR(...,"") produces one --
+  suspected in CBB's "ncaa" word, but it turned out the seed lookup there was
+  positional, not by label. Check before assuming.
+* One typo'd header ("2045-25") was harmless where columns matched by
+  position and fatal where they matched by label (CBB_rk). Same cell, two
+  behaviours.
+* `IFERROR(x,)` yields a cell ISBLANK treats as blank -- NCAA_val relies on it
+  to charge a school without football its basketball rank plus 100.
+* VLOOKUP and COUNTIFS are case-blind; the sheet writes his teams in capitals
+  (MICHIGAN, DETROIT) in some tabs and not others. Every lookup here is
+  case-blind for that reason, and the capitals are how the app knows which
+  rows are his.
+
+**Input tabs are not pure input.** Four kinds of exception, all handled:
+season cells that are formulas (HKY_PW fills the Ivies' missing 2020-21 with
+`=AVERAGE` of the next three -- kept as text, evaluated by `Tab._formula`);
+numbers typed over computed cells (HKY_FF gives Bentley a flat Prior 5 Yr of
+1, CBB_seed row 185 is frozen values -- `Tab.override`); bonus rows below the
+teams worth that row's column-C (or B) points per title; and NHL_div /
+MLS_table giving an expansion team a prior equal to its median recent finish.
+
+**The front tabs have layout faults the proof has to step around**, all in
+`rankings_proof.py`: CFB's national list skips #21 (a gap row, but the
+formula below still counts ROW-1); HKY row 21 is typed over with Alaska
+Anchorage; MLS's competition column sits a row low at #33 and was never
+filled below row 44; NCAA ranks nothing below the first hockey-only school.
+None of these are carried into the app.
+
+**The effect of the corrections is not small.** With SHEET_COMPAT off, Ohio
+State passes Michigan in the CFB Big Ten (the SP+ text fix), the MLB and NHL
+orders reshuffle (division no longer squared/x25), and the EPL gains its
+European quarter.
+
+## Filling seasons from ESPN (2026-09-21)
+
+`fill.py` and `fill_tournaments.py` write finished seasons to
+`rankings/seasons/`. Each rule below was found by re-deriving his last typed
+season and diffing; all now match it exactly.
+
+* **ESPN's past-season standings do not list a division in finishing order**
+  (the 2025 AL East came back Yankees first, Blue Jays last). Sort by
+  `playoffSeed`, which carries every tiebreaker.
+* **His ties share a place -- except first.** Two 9-8 teams are both third;
+  but a division title is won outright, so the champion is 1 and a team level
+  with it is 2 (2025: Toronto 1, Yankees 2). Tied means equal win percentage,
+  equal POINTS in the NHL. Big Ten baseball has no such exception: UCLA and
+  Oregon were BOTH 1 in 2025, and the Outright Champion row stayed empty.
+* **Playoff points are the deepest round reached**: title 30, final 15,
+  semi 5, second round 3, first round 1, NBA play-in 0.5. ESPN's type code
+  names the round (RD16/QTR/SEMI/FINAL) except in the NFL, where every game
+  is "STD" and the note has to be read. The NBA play-in is SEASON TYPE 5, not
+  3 -- asking only for the postseason misses it.
+* **Tournaments are read by ESPN's season slug** ("group-stage",
+  "round-of-16", "final"...), a day at a time. The College World Series is
+  scored by Omaha wins: 0-2 is 3, one win 5, a bracket final lost 10.
+* **The Leagues Cup's 2025 league phase earned NOTHING in his sheet**, where
+  the old group stage and round of 32 earned 0.5.
+* **World Cup qualifying**: reaching the final Concacaf round (the Octagonal,
+  or 2026's "third-round") is 0.5 -- the "wcq" word. The 2026 tournament's new
+  ROUND OF 32 has no number in his scale; it is given 3, between the group (2)
+  and the round of 16 (5). His call to confirm.
+* **Names**: his sheet has its own spellings -- "Ciabo", "Hamilton" for Forge
+  FC, "Antigua", "USC Upstate", "Texas Christian", "Oakland" for the
+  Athletics. They are aliases in the fillers, not corrections. ESPN now
+  writes "LA Clippers", so "LA" expands to Los Angeles on BOTH sides.
+* **A team he has no row for is added** under ESPN's place name (CWS
+  newcomers, Champions Cup minnows) -- except in the Concacaf tabs, where an
+  unknown team is a guest (Saudi Arabia, Qatar) or from another continent and
+  is skipped.
+* **Refilling after fixing an alias**: delete that tab's
+  `rankings/seasons/` file first. A wrong name becomes a NEW ROW, and the
+  next fill then matches the wrong row.
+
+**The CFP ranking's ESPN type code is a guess.** College football's poll is
+configured as `["cfp", "ap"]` -- the first that exists wins. On 2026-09-21
+ESPN listed only `ap`, `usa`, `fcs` and `afca`, so "cfp" is unconfirmed. When
+the committee's first ranking is out (early November), check the rankings
+payload's `type` values; if it is not "cfp", the table silently keeps
+reading the AP poll.

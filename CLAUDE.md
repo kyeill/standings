@@ -13,7 +13,10 @@ python site.py           build the app into output/site/  (in-season only)
 python site.py --all     keep every sport, for working out of season
 python build.py          print what each tab resolved to, no HTML
 python logos.py --write  re-measure crest variants when teams change
-python selftest.py       117 assertions -- run before trusting any change
+python selftest.py       168 assertions -- run before trusting any change
+python rankings_proof.py the History port, cell by cell against the old sheet
+python fill.py           write finished seasons into rankings/seasons/
+python fill.py --check   re-derive his last typed season from ESPN and diff it
 ```
 
 Python is not on PATH:
@@ -50,6 +53,17 @@ deliberately share no code today.
 assembles each tab, `site.py` renders it, and `fetch.py` is the only thing that
 talks to the network -- except `chockey.py`, which derives college hockey
 standings from game results because ESPN publishes none.
+
+## History (the rankings)
+
+`rankings.py` is Kyle's rankings spreadsheet rebuilt, proven cell for cell
+against it (`SHEET_COMPAT = True`) and run with its faults corrected. Its
+data is `rankings/inputs/` -- what he typed -- and `rankings/expected/` is
+the answer key, which must never be regenerated from the app. Read the
+History section of README.md and the rankings section of NOTES.md before
+touching either. Seasons finished since the import live in
+`rankings/seasons/` (written by `fill.py` in the workflow, committed back
+with the odds history); `rankings/inputs/` is never edited after the import.
 
 ## Publishing a change the same day
 

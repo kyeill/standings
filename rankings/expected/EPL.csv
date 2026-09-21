@@ -1,0 +1,47 @@
+PREMIER LEAGUE,,UEFA,Value,CHAMPS,UCL,,2025-26,2024-25,2023-24,2022-23,2021-22,,UEFA SUPER LEAGUE,,Value,Lg,CHAMPS,UCL,,2025-26,2024-25,2023-24,2022-23,2021-22
+1,Manchester City,3,100,6,10,,2+^,3,CHAMPS,TREBLE,CHAMPS,,1,Real Madrid,100,ESP,4,10,,Qtrs,Qtrs,CHAMPS,Semis,CHAMPS
+2,Liverpool,4,90.48397646,2,8,,5,CHAMPS,3^,5,2+^,,2,Paris Saint-Germain,93.94908026,FRA,2,10,,CHAMPS,CHAMPS,Semis,R16,R16
+3,Arsenal,7,85.66580005,1,4,,CHAMPS,2,2,2,5,,3,Manchester City,79.760182,ENG,1,10,,R16,KO,Qtrs,CHAMPS,Semis
+4,Manchester United,23,82.69978854,,5,,3,15,8+,3^,6,,4,Liverpool,73.09665212,ENG,1,8,,Qtrs,R16,[UEL],R16,Final
+5,Chelsea,9,79.38868356,1,6,,10,4,6,12,3,,5,Inter Milan,69.93927209,ITA,,8,,KO,Final,R16,Final,R16
+6,TOTTENHAM HOTSPUR,12,71.53675583,,6,,17,17,5,8,4,,6,Bayern Munich,65.16993813,GER,1,10,,Semis,Qtrs,Semis,Qtrs,Qtrs
+7,Newcastle United,47,70.89892615,,2,,12,5^,7,4,11,,7,Arsenal,59.44336921,ENG,,4,,Final,Semis,Qtrs,[UEL],n/a
+8,Aston Villa,21,69.80307798,,1,,4,6,4,7,14,,8,Dortmund,59.44330607,GER,,10,,KO,Qtrs,Final,R16,group
+9,Crystal Palace,42,63.30605551,,.,,15,12+,10,11,12,,9,Chelsea,58.45639808,ENG,1,6,,R16,UECL*,n/a,Qtrs,Qtrs
+10,Brighton & Hove Albion,119,62.3063574,,.,,8,8,11,6,9,,10,Atletico Madrid,52.10102486,ESP,,9,,Semis,R16,Qtrs,group,Qtrs
+11,West Ham United,39,60.19510349,,.,,18,14,9,14,7,,11,Barcelona,48.2907603,ESP,,10,,Qtrs,Semis,Qtrs,group,group
+12,Bournemouth,117,59.24012156,,.,,6,9,12,15,n/a,,12,TOTTENHAM HOTSPUR,47.1994906,ENG,,6,,R16,UEL*,n/a,R16,[UECL]
+13,Wolverhampton,139,55.62035924,,.,,20,13,14,13,10,,14,Juventus,42.13609855,ITA,,9,,KO,KO,n/a,group,R16
+14,Everton,122,54.49570197,,.,,13,13,15,17,16,,23,Manchester United,30.41709607,ENG,,5,,,[UEL],group,[UEL],R16
+15,Brentford,118,53.72046497,,.,,9,10,16,9,13,,26,AC Milan,29.04082124,ITA,,4,,,KO,group,Semis,group
+16,Leicester City,97,52.923512,,1,,n/a,18,n/a,18,8,,,,,,,,,,,,,
+17,Fulham,124,52.3108409,,.,,11,11,13,10,n/a,,UEFA ADDITIONAL,,UEFA,Lg,CHAMPS,UCL,,2025-26,2024-25,2023-24,2022-23,2021-22
+18,Nottingham Forest,75,43.13512074,,.,,16,7,17,16,n/a,,,,,,,,,,,,,
+,,,,,,,,,,,,,13,Roma,42.77077369,ITA,,2,,,,[UEL],[UEL],UECL*
+19,Burnley,120,34.55715293,,.,,19,n/a,19,n/a,18,,15,RB Leipzig,41.81301989,GER,,7,,,group,R16,R16,group
+20,Southampton,133,34.55705703,,.,,n/a,20,n/a,20,15,,16,Leverkusen,39.46971271,GER,,5,,R16,R16,[UEL],group,
+,,,,,,,,,,,,,17,Atalanta,36.95647957,ITA,,5,,R16,KO,UEL*,,group
+,,,PREMIER LEAGUE,,FA CUP FINAL,,,,LEAGUE CUP FINAL,,,,18,Benfica,36.95641098,POR,,9,,KO,R16,group,Qtrs,Qtrs
+,,,,,,,,,,,,,,,,,,,,,,,,
+,,2025-26,ARSENAL,,MAN CITY,,,CHE,MAN CITY,,ARS,,19,Sevilla,36.58101514,ESP,,5,,,,group,UEL*,group
+,,2024-25,LIVERPOOL,,CRYSTAL PALACE,,,CITY,NEWCASTLE,,LIV,,20,Eintracht Frankfurt,33.43060526,GER,,2,,group,,,R16,UEL*
+,,2023-24,MAN CITY,,UNITED,,,CITY,LIVERPOOL,,CHE,,21,Aston Villa,31.7409303,ENG,,1,,UEL*,Qtrs,,,
+,,2022-23,MAN CITY,,MAN CITY,,,UTD,UNITED,,NEW,,22,Porto,31.3042831,POR,,7,,,,R16,R16,group
+,,2021-22,MAN CITY,,LIVERPOOL,,,CHE,LIVERPOOL,,CHE,,24,Napoli,29.50456962,ITA,,7,,group,,R16,Qtrs,
+,,,,,,,,,,,,,25,Villarreal,29.50397478,ESP,,2,,group,,,,Semis
+,,,CHAMPIONS LEAGUE,,,,EUROPA LEAGUE,,,CONFERENCE LG,,,27,Sporting CP,28.56787086,POR,,6,,Qtrs,KO,,group,R16
+,,,,,,,,,,,,,,,,,,,,,,,,
+,,2025-26,PARIS SG,,ARS,,ASTON VILLA,,FRE,CRYSTAL PALACE,,,28,Club Brugge,26.61701503,,,8,,KO,R16,,R16,group
+,,2024-25,PARIS SG,,INT,,TOTTENHAM,,UTD,CHELSEA,,,29,Athletic Bilbao,24.54870025,ESP,,1,,group,[UEL],,,
+,,2023-24,REAL MADRID,,BVB,,ATALANTA,,LEV,OLYMPIACOS,,,30,Braga,24.54855083,,,1,,[UEL],,group,,
+,,2022-23,MAN CITY,,INT,,SEVILLA,,ROMA,WEST HAM,,,31,Red Bull Salzburg,24.54746371,,,6,,,group,group,group,R16
+,,2021-22,REAL MADRID,,LIV,,EINTRACHT,,RANG,ROMA,,,32,Ajax,24.01179869,NED,,6,,group,,,group,R16
+,,,,,,,,,,,,,33,PSV Eindhoven,22.34756208,NED,,5,,group,R16,R16,,
+,,,,,,,2025-26,2024-25,2023-24,2022-23,2021-22,,34,Shakhtar Donetsk,22.34729169,,,8,,,group,group,group,group
+,,,,,,,,,,,,,35,Olympiacos,21.19290989,,,4,,KO,,UECL*,,
+,,LA LIGA WINNERS,,,,,BAR,BAR,MAD,BAR,MAD,,,,,,,,,,,,,
+,,BUNDESLIGA WINNERS,,,,,BAY,BAY,LEV,BAY,BAY,,36,Lille,19.99870715,FRA,,3,,,R16,,,R16
+,,SERIE A WINNERS,,,,,INT,NAP,INT,NAP,MIL,,37,Lyon,19.99864381,FRA,,3,,,,,,
+,,LIGUE 1 WINNERS,,,,,PSG,PSG,PSG,PSG,PSG,,38,Monaco,19.38538922,FRA,,5,,KO,KO,,,
+,,CLUB WORLD CUP,,,,,,CHE,MAD,CITY,MAD,,39,West Ham United,17.47731115,ENG,,.,,,,,UECL*,[UEL]
+,,,,,,,,,,,,,40,Copenhagen,16.14661644,,,4,,group,,R16,group,

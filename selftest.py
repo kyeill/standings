@@ -421,6 +421,84 @@ check("NBA is configured for one conference table",
       nba["groups"][0]["sections"], ["conference"])
 
 
+print("\ncollege tiebreaks (offline)")
+# His order for a tie on conference record: poll rank, then the metric
+# column, then the non-conference record.
+_rows = [
+    {"team": "C", "conf_record": "5-1", "record": "8-2", "poll": None, "extra": 40.0},
+    {"team": "B", "conf_record": "5-1", "record": "8-2", "poll": 9, "extra": 10.0},
+    {"team": "A", "conf_record": "5-1", "record": "10-1", "poll": None, "extra": 60.0},
+    {"team": "D", "conf_record": "5-1", "record": "10-1", "poll": None, "extra": 40.0},
+    {"team": "E", "conf_record": "6-0", "record": "6-4", "poll": None, "extra": None},
+]
+check("conference record first, then rank, odds, non-conference record",
+      [r["team"] for r in sorted(_rows, key=lambda r: build._college_key(r, "high"))],
+      ["E", "B", "A", "D", "C"])
+check("a projected seed breaks ties the other way (lower is better)",
+      [r["team"] for r in sorted(_rows[:3], key=lambda r: build._college_key(r, "low"))],
+      ["B", "C", "A"])
+
+print("\nhistorical rankings (offline)")
+import rankings
+import rankings_proof
+
+# Faults and all, the port must reproduce every cell the sheet displayed.
+for name, bad, report in rankings_proof.checks():
+    check("rankings: %s matches the sheet" % name, bad, 0,
+          "; ".join(report[:3]))
+
+# The corrections, each against the rule it restores.
+rankings.SHEET_COMPAT = False
+check("a number typed as text counts as that number",
+      rankings.Tab("CFB_SP+").cell(2, 8), 111.0)
+check("CBB_seed's '2045-25' header reads as 2024-25",
+      "2024-25" in rankings.Tab("CBB_seed").seasons(), True)
+check("MLB and NHL weigh division at a quarter, like everyone else",
+      (rankings.PRO["MLB"]["div_weight"], rankings.PRO["NHL"]["div_weight"]),
+      (0.25, 0.25))
+cbb_nat = [r[1] for r in rankings.cbb()["sections"][2]["rows"]]
+check("a repeated row is ranked once", len(cbb_nat), len(set(cbb_nat)))
+mls_ = rankings.mls()
+check("every MLS club appears in one conference table",
+      sum(len(s["rows"]) for s in mls_["sections"][:2]), 30)
+eng = rankings.epl()["sections"][0]["rows"]
+check("the Premier League table is twenty clubs", len(eng), 20)
+check("a Premier League season reads as a word or a place",
+      all(isinstance(w, str) for r in eng for w in r[7:]), True)
+# Filled seasons: laid in front of the sheet's, and never seen by the proof.
+_tmp = tempfile.mkdtemp()
+_old_seasons = rankings.SEASONS
+try:
+    rankings.SEASONS = _tmp
+    with open(os.path.join(_tmp, "NFL_div.csv"), "w", encoding="utf-8") as fh:
+        fh.write("season,name,value\n2030-31,Dallas,1\n2030-31,DETROIT,2\n")
+    t = rankings.Tab("NFL_div")
+    check("a filled season comes first", t.seasons()[0], "2030-31")
+    check("its values land on the right rows (case-blind)",
+          (rankings._cell_by(t, "Dallas", "2030-31"),
+           rankings._cell_by(t, "Detroit", "2030-31")), (1.0, 2.0))
+    check("the sheet's own seasons follow it", t.seasons()[1], "2025-26")
+    rankings.SHEET_COMPAT = True
+    check("compat mode ignores filled seasons",
+          rankings.Tab("NFL_div").seasons()[0], "2025-26")
+    rankings.SHEET_COMPAT = False
+finally:
+    rankings.SEASONS = _old_seasons
+    shutil.rmtree(_tmp, ignore_errors=True)
+
+import fill
+check("his names map to ESPN's (NY Giants, LA Clippers, Oakland)",
+      sorted(fill.matcher(["NY Giants", "LA Clippers", "Oakland"], [
+          {"id": "1", "location": "New York", "displayDisplay": "", "displayName": "New York Giants"},
+          {"id": "2", "location": "New York", "displayName": "New York Jets"},
+          {"id": "3", "location": "LA", "displayName": "LA Clippers"},
+          {"id": "4", "location": "Athletics", "displayName": "Athletics"}]).items()),
+      [("1", "NY Giants"), ("3", "LA Clippers"), ("4", "Oakland")])
+
+check("HKY_PW's missing 2020-21 is the average of the next three",
+      round(rankings.Tab("HKY_PW").cell(21, 12), 4), round((3 + 11 + 3) / 3, 4))
+
+
 print("\n%d passed, %d failed" % (len(PASS), len(FAIL)))
 if FAIL:
     print("failed: %s" % ", ".join(FAIL))

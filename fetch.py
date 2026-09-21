@@ -171,8 +171,13 @@ def poll(league_path, kind="ap"):
                max_age_min=60 * 6)
     if not data:
         return {}
-    for r in data.get("rankings") or []:
-        if r.get("type") == kind:
+    # A list means "the first of these that exists": college football reads
+    # the CFP committee's ranking once it is published, the AP poll before.
+    kinds = [kind] if isinstance(kind, str) else list(kind)
+    polls = {r.get("type"): r for r in data.get("rankings") or []}
+    for k in kinds:
+        r = polls.get(k)
+        if r:
             # Keyed by ESPN team id, never by name. The AP poll lists
             # "michigan" and does not list Michigan State at all, so any
             # substring match hands Michigan State the Wolverines' ranking.

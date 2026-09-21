@@ -18,6 +18,7 @@ import unicodedata
 import zlib
 
 import build
+import history_view
 import fetch
 import leagues
 
@@ -195,6 +196,41 @@ footer{margin-top:34px;color:var(--muted);font-size:12px;
   .note{font-size:14px;padding:11px 13px}
   footer{font-size:13px}
 }
+/* Standings / History. A tab with both shows a switch; a sport out of season
+   shows History alone, so every tab is on all year. */
+.switch{display:inline-flex;background:var(--chip);border-radius:8px;padding:2px;
+        margin:2px 0 4px}
+.switch button{background:none;border:0;color:var(--muted);font:inherit;
+        font-size:13px;padding:5px 13px;border-radius:6px;cursor:pointer}
+.switch button[aria-pressed="true"]{background:var(--card);color:var(--ink)}
+section .mode{display:none}
+section[data-mode="standings"] .mode.standings,
+section[data-mode="history"] .mode.history{display:block}
+/* History tables run wider than the standings: a Value, title counts and five
+   seasons. Narrower number columns, and a phone keeps only the Value and the
+   three latest seasons (the rest are hide-sm). */
+.hist th:nth-child(n+3),.hist td:nth-child(n+3){width:52px}
+.hist td{font-size:13px}
+.hist td.win{color:var(--accent);font-weight:600}
+/* Season words ("CHAMPS", "B1GCG", "1st Div") are wider than any number, so
+   they sit centred with a little air rather than right-aligned edge to edge,
+   where two neighbours ran together as "B1GCGCHAMPS". */
+.hist th.s,.hist td.s{text-align:center;padding-left:2px;padding-right:2px}
+.foot th:first-child,.foot td:first-child{width:auto;text-align:left;
+        padding-left:4px}
+.foot th:nth-child(n+2),.foot td:nth-child(n+2){width:64px}
+@media (max-width:640px){
+  .hist th:nth-child(n+3),.hist td:nth-child(n+3){width:42px}
+  .hist th.s,.hist td.s{width:52px}
+  .hist td{font-size:12px}
+  .hist td.s{font-size:11.5px}
+  .foot th:nth-child(n+2),.foot td:nth-child(n+2){width:56px}
+}
+@media (min-width:641px){
+  .hist td{font-size:14px}
+  .hist th:nth-child(n+3),.hist td:nth-child(n+3){width:60px}
+  .hist th.s,.hist td.s{width:66px}
+}
 """
 
 SW = """
@@ -256,6 +292,23 @@ addEventListener('touchend',e=>{
   const next=cur+(dx<0?1:-1);
   if(next>=0&&next<tabs.length)show(tabs[next].dataset.k,true);
 },{passive:true});
+
+
+// Standings / History, remembered per tab.
+document.querySelectorAll('.switch button').forEach(b=>b.onclick=()=>{
+  const sec=b.closest('section');
+  sec.dataset.mode=b.dataset.m;
+  sec.querySelectorAll('.switch button').forEach(x=>
+    x.setAttribute('aria-pressed',x.dataset.m===b.dataset.m));
+  try{localStorage.setItem('mode:'+sec.dataset.k,b.dataset.m)}catch(e){}
+});
+document.querySelectorAll('section .switch').forEach(sw=>{
+  const sec=sw.closest('section');
+  let m=null;
+  try{m=localStorage.getItem('mode:'+sec.dataset.k)}catch(e){}
+  const b=m&&sw.querySelector('button[data-m="'+m+'"]');
+  if(b)b.click();
+});
 
 if('serviceWorker' in navigator)
   navigator.serviceWorker.register('./sw.js').catch(()=>{});
@@ -582,25 +635,44 @@ def goal_diff(row):
 # --- page -------------------------------------------------------------------
 
 def render(data, include_all=False):
-    # A sport that is not actively going on is dropped entirely, tab and all --
-    # not shown as an empty tab saying so. Test mode keeps everything.
-    shown = [t for t in data["tabs"]
-             if t["cards"] or t["tables"] or (include_all and t["notes"])]
+    """Every tab, always. A sport in season gets a Standings / History switch,
+    opening on Standings; one out of season shows History alone. Test mode
+    (--all) also keeps the out-of-season notes."""
+    history = data.get("history") or {}
+    tabs = [dict(t) for t in data["tabs"]]
+    for key, label in history_view.EXTRA_TABS:
+        tabs.append({"key": key, "label": label, "cards": [], "tables": [],
+                     "notes": []})
     nav = "".join('<button data-k="%s">%s</button>' % (esc(t["key"]), esc(t["label"]))
-                  for t in shown)
+                  for t in tabs)
     panes = []
-    for t in shown:
-        inner = []
+    for t in tabs:
+        standings = []
         for card in t["cards"]:
-            inner.append(tracker_card(card))
+            standings.append(tracker_card(card))
         for table in t["tables"]:
-            inner.append(table_block(table))
-        for note in t["notes"]:
-            inner.append('<div class="note">%s</div>' % esc(note))
-        if not inner:
-            inner.append('<div class="note">Nothing to show.</div>')
-        panes.append('<section data-k="%s">%s</section>' % (esc(t["key"]),
-                                                            "".join(inner)))
+            standings.append(table_block(table))
+        if include_all:
+            for note in t["notes"]:
+                standings.append('<div class="note">%s</div>' % esc(note))
+        past = history_view.tab_html(t["key"], history.get(t["key"]), row_shade)
+        if standings and past:
+            switch = ('<div class="switch">'
+                      '<button data-m="standings" aria-pressed="true">Standings</button>'
+                      '<button data-m="history" aria-pressed="false">History</button>'
+                      '</div>')
+            body = ('%s<div class="mode standings">%s</div>'
+                    '<div class="mode history">%s</div>'
+                    % (switch, "".join(standings), past))
+            mode = "standings"
+        elif standings:
+            body, mode = '<div class="mode standings">%s</div>' % "".join(standings), "standings"
+        else:
+            body = '<div class="mode history">%s</div>' % (
+                past or '<div class="note">Nothing to show.</div>')
+            mode = "history"
+        panes.append('<section data-k="%s" data-mode="%s">%s</section>'
+                     % (esc(t["key"]), mode, body))
     fail = ""
     if data.get("failures"):
         fail = ('<div class="note">Some data could not be loaded today: %s</div>'
@@ -621,9 +693,7 @@ def render(data, include_all=False):
             '<div class="wrap"><header><h1>Standings</h1>'
             '<div class="updated">Updated %s</div></header>'
             '<nav>%s</nav>%s%s'
-            '<footer>Standings from ESPN. Playoff odds: ESPN FPI for the NFL, '
-            'BPI for the NBA, the MLB standings feed, and Hockey-Reference for '
-            'the NHL. College and soccer have no odds source.</footer></div>'
+            '</div>'
             '<script>%s</script>') % (
         esc(data["built"]), CSS, esc(pretty(data["built"])), nav,
         fail, "".join(panes), JS.replace("%%BUILT%%", data["built"]))
@@ -701,6 +771,7 @@ MANIFEST = {
 def main():
     include_all = "--all" in sys.argv
     data = build.build_all(include_offseason=include_all)
+    data["history"] = history_view.build()
     os.makedirs(SITE, exist_ok=True)
     page = render(data, include_all)
     with open(os.path.join(SITE, "index.html"), "w", encoding="utf-8") as fh:

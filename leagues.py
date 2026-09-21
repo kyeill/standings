@@ -27,7 +27,10 @@ TABS = [
         "groups": [
             {"key": "cfb", "path": "football/college-football", "group": 80,
              "label": "Big Ten", "teams": [MICHIGAN],
-             "basis": "conference", "unit": GAMES, "poll": "ap",
+             "basis": "conference", "unit": GAMES, "poll": ["cfp", "ap"],
+             # Ties on conference record: the CFP/AP rank, then CFP odds (the
+             # higher the better), then the non-conference record.
+             "tiebreak": "high",
              # ESPN's FPI carries probmakeplayoffs for college football, which
              # there means the CFP.
              "odds": "cfb", "odds_label": "to make the CFP",
@@ -37,7 +40,8 @@ TABS = [
             # Cornell is Ivy, which is FCS -- a different feed entirely.
             {"key": "cfb-fcs", "path": "football/college-football", "group": 81,
              "label": "Ivy League", "teams": [CORNELL],
-             "basis": "conference", "unit": GAMES, "poll": "fcs"},
+             "basis": "conference", "unit": GAMES, "poll": "fcs",
+             "tiebreak": "high"},
         ],
     },
     {
@@ -46,6 +50,9 @@ TABS = [
             {"key": "cbb", "path": "basketball/mens-college-basketball",
              "label": "Big Ten", "teams": [MICHIGAN],
              "basis": "conference", "unit": GAMES, "poll": "ap",
+             # Ties: AP rank, then projected seed (lower first), then the
+             # non-conference record.
+             "tiebreak": "low",
              # BPI has no "chance to make the tournament", but it does project
              # a seed, which is the bracketology answer.
              "column": {"source": "powerindex",
@@ -54,7 +61,8 @@ TABS = [
                         "label": "Seed", "fmt": "int"}},
             {"key": "cbb-ivy", "path": "basketball/mens-college-basketball",
              "label": "Ivy League", "teams": [CORNELL],
-             "basis": "conference", "unit": GAMES, "poll": "ap"},
+             "basis": "conference", "unit": GAMES, "poll": "ap",
+             "tiebreak": "low"},
         ],
     },
     {
