@@ -71,7 +71,9 @@ jobs:
           # [skip ci] is essential: without it this push retriggers the
           # workflow forever.
           git diff --staged --quiet || git commit -m "Record odds history and seasons [skip ci]"
-          git push
+          # Two runs close together (a retried dispatch) raced here on
+          # 2026-09-22 and the second push was rejected. Rebase and retry.
+          git push || (git pull --rebase && git push)
       - uses: actions/upload-pages-artifact@v3
         if: steps.gate.outputs.run == 'yes'
         with:
