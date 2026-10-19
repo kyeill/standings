@@ -304,6 +304,11 @@ not used. Hockey-Reference's `/friv/playoff_prob.cgi` is not disallowed by
 their robots.txt (checked 2026-08-25) and the code honours their published
 `Crawl-delay: 3`, fetching once a day and caching for twelve hours. If that
 ever feels wrong, delete the source and the NHL simply loses its odds column.
+(The `.cgi` address now redirects to `/friv/playoff_prob.fcgi`, which is what
+the code fetches.) Each October the NHL tab shows **no odds for its first few
+weeks**: Hockey-Reference keeps last season's final table up until every team
+has played about ten games, and the app refuses any table whose points do not
+match ESPN's standings.
 
 ## The odds history
 

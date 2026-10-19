@@ -36,7 +36,7 @@ def _odds_for(group, rows):
             if value is not None:
                 out[r["team"]] = value
         return out
-    table = odds_src.for_league(key)
+    table = odds_src.for_league(key, rows)
     out = {}
     for r in rows:
         value = odds_src.lookup(table, r["team"])

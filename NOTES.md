@@ -126,6 +126,22 @@ Hockey-Reference and MLB by its own standings payload, so every one of the Big
 4 does have odds; the gaps are college basketball, college hockey and soccer,
 and for the first two a selection metric stands in.
 
+**Hockey-Reference serves LAST season's odds for the first weeks of a new
+one.** Its playoff-probability page only switches seasons once every team has
+played about ten games; until then the same address returns the previous
+season's final table -- `points_remain` 0 for every team, the sixteen playoff
+teams at 100%, the non-playoff teams blank, team links still pointing at
+`/teams/XXX/2026.html`. Nothing on the page says it is stale. The app
+recorded that table as the 2026-27 race every day from 2026-09-19 to
+2026-10-18 (Detroit "absent" because it missed the 2026 playoffs); all 480
+rows were deleted. Caught on 2026-10-18 by rss-feeds, which reads the same
+page and checks it against the NHL's own points. `odds._current()` now
+requires three quarters of the page's `points_current` to sit within two
+points of ESPN's standings (two, because Hockey-Reference can lag a night
+behind the morning build; the stale table misses by fifty), falling back to
+"some points remain" when no standings are passed. A rejected table means no
+NHL odds at all, and nothing recorded. Expect that every October.
+
 **A local build will not byte-match the live one, and that is fine.** `cache/`
 holds ESPN responses for up to three hours, so a local `site.py` can render
 older standings than the workflow just fetched -- on 2026-08-26 the live page

@@ -208,10 +208,32 @@ check("Michigan State has its own rank, not Michigan's",
 print("\nodds sources  [LIVE]")
 nfl = odds.for_league("nfl")
 nba = odds.for_league("nba")
-nhl = odds.for_league("nhl")
+nhl_rows = fetch.rows("hockey/nhl", level=2)
+nhl = odds.for_league("nhl", nhl_rows)
 check("NFL odds available", len(nfl) >= 30, True)
 check("NBA odds available", len(nba) >= 30, True)
-check("NHL odds available (Hockey-Reference)", len(nhl) > 0, True)
+# Hockey-Reference serves last season's final table until every team has
+# played ~10 games, so in October "no odds" is the right answer. What must
+# never happen is odds coming back from a table whose points disagree with
+# ESPN's -- that recorded last season's playoff teams at 100% in Oct 2026.
+# The three offline checks below hold that rule; this one only asks that a
+# current table, when there is one, covers the league.
+check("NHL odds: a full current table, or none (Hockey-Reference)",
+      len(nhl) == 0 or len(nhl) >= 16, True)
+_espn = [{"team": "Detroit Red Wings", "stats": {"points": "14"}},
+         {"team": "Boston Bruins", "stats": {"points": "12"}},
+         {"team": "Utah Mammoth", "stats": {"points": "9"}},
+         {"team": "St. Louis Blues", "stats": {"points": "7"}}]
+check("last season's final table is rejected",
+      odds._current({"detroit red wings": 92, "boston bruins": 100,
+                     "utah mammoth": 92, "st. louis blues": 86}, [0] * 4, _espn),
+      False)
+check("this season's table is accepted, a night behind",
+      odds._current({"detroit red wings": 12, "boston bruins": 12,
+                     "utah mammoth": 9, "st. louis blues": 7}, [140] * 4, _espn),
+      True)
+check("with no standings, all-zero points remaining is rejected",
+      odds._current({}, [0] * 32, None), False)
 check("lookup matches a full name against a short label",
       odds.lookup({"tigers": 3.2}, "Detroit Tigers"), 3.2)
 check("lookup matches the other direction",
