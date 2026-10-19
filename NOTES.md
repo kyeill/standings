@@ -83,9 +83,24 @@ Sources ruled out for college hockey, all checked 2026-08-25: NCAA's data host
 404s on every standings path tried; USCHO renders client side; College Hockey
 News has no machine-readable standings page. The NCAA's **NPI** ranking (which
 now decides tournament selection) IS reachable through a community proxy at
-`ncaa-api.henrygd.me/rankings/icehockey-men/d1` -- Cornell showed there at #11,
-22-10-1 -- but it is a third-party mirror, not a first-party feed, so it is not
-used.
+`ncaa-api.henrygd.me` -- Cornell showed there at #11, 22-10-1. It is a
+third-party mirror, not a first-party feed; Kyle approved it on 2026-08-25 and
+it is the HKY rank column.
+
+**Name the poll on that mirror: `/rankings/icehockey-men/d1/npi`.** The bare
+`/rankings/icehockey-men/d1` served NPI in August and the USCHO.com media poll
+by October 2026 -- title "USCHO.com", columns RANK / "TEAM (1ST VOTES)" /
+RECORD / POINTS / PREVIOUS, twenty teams. Nothing errored; the code read
+"Rank" and "School", found neither, and every hockey team silently lost its
+rank (selftest: 0 of 63 matched). `chockey._parse_npi()` now refuses any
+payload whose `title` is not "NPI", so a swap like that empties the column
+rather than passing a poll off as NPI. The named path lists all 63 D1 teams
+(e.g. "Through Games Oct. 18 2026"). The mirror's other `/d1/<name>` guesses
+(`uscho`, `ncaa-mens-ice-hockey-npi`) 404.
+
+**The NPI is this season's field, so test it against this season's teams.**
+2026-27 has Maryville and no Mercyhurst; checking the new NPI against the
+2025-26 rows gave 62 of 63 with nothing wrong with the name matching.
 
 **ESPN's `playoffSeed` is not a table position.** MLB seeds 1-3 are division
 winners, so a 66-66 division leader is seed 3 while a 72-59 wild card is seed 5.
@@ -153,7 +168,11 @@ because the calendar moved: the NFL left preseason, a college hockey record
 grew as more months were cached, and the set of in-season tabs changed. Assert
 the RULE, not the day: check preseason exclusion against a synthetic payload,
 check a record's shape rather than its value, and derive the expected live tabs
-from `season.is_live` rather than listing them.
+from `season.is_live` rather than listing them. Two more went the same way on
+2026-10-18: "NBA is out of season" (the opener came within ten days) and
+"Michigan is NPI 1". Season detection is now checked on fixed past dates
+(MLB in mid-July, the NBA in late August), and NPI by Michigan, Michigan State
+and Michigan Tech each having a DIFFERENT rank, not by what the ranks are.
 
 ## Carried over from sports-daily
 

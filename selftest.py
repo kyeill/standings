@@ -99,8 +99,14 @@ finally:
 
 print("\nseason detection  [LIVE]")
 today = datetime.date.today()
-check("MLB is in season", season.is_live("baseball/mlb", today), True)
-check("NBA is out of season", season.is_live("basketball/nba", today), False)
+# Fixed dates, not today: "the NBA is out of season" was true when written and
+# failed once the October opener came within the ten-day window. Mid-July is
+# the middle of the MLB season; late August is the NBA's dead weeks, after the
+# summer leagues and before preseason.
+check("MLB is in season in mid-July",
+      season.is_live("baseball/mlb", datetime.date(2026, 7, 15)), True)
+check("NBA is out of season in late August",
+      season.is_live("basketball/nba", datetime.date(2026, 8, 25)), False)
 
 # Preseason must never count, or the app shows meaningless exhibition records.
 # Tested against a synthetic payload rather than a real league, because which
@@ -196,14 +202,30 @@ if cornell:
     import re as _re
     check("Cornell has a W-L-T conference record",
           bool(_re.fullmatch(r"\d+-\d+-\d+", cornell["stats"]["vs. Conf."])), True)
-check("every team matched an NPI rank",
-      sum(1 for r in rows if r.get("npi")), 63)
-mich = next((r for r in rows if r["team"] == "Michigan Wolverines"), None)
-mstate = next((r for r in rows if "Michigan State" in r["team"]), None)
-check("Michigan is NPI 1", mich and mich["npi"], 1)
-# The trap: a substring match would give Michigan State Michigan's rank.
-check("Michigan State has its own rank, not Michigan's",
-      mstate and mstate["npi"], 3)
+# NPI is THIS season's ranking, so match it against this season's teams. The
+# 2025-26 rows above stopped fitting in Oct 2026: Mercyhurst is in them and not
+# in the new NPI, which lists Maryville instead -- 62 of 63, and no name bug.
+now = chockey.standings(datetime.date.today())
+check("every team playing this season matched an NPI rank",
+      all(r.get("npi") for r in now), True)
+mich = next((r for r in now if r["team"] == "Michigan Wolverines"), None)
+mstate = next((r for r in now if "Michigan State" in r["team"]), None)
+mtech = next((r for r in now if "Michigan Tech" in r["team"]), None)
+# The ranks themselves move every week; that Michigan has one does not.
+check("Michigan has an NPI rank", bool(mich and mich["npi"]), True)
+# The trap: a substring match would give Michigan State and Michigan Tech
+# Michigan's rank.
+check("Michigan State and Michigan Tech have their own ranks",
+      len({mich and mich["npi"], mstate and mstate["npi"],
+           mtech and mtech["npi"]} - {None}), 3)
+# Oct 2026: the mirror's unnamed rankings path started serving the USCHO poll,
+# whose rank column would otherwise have been read as NPI for twenty teams.
+check("a USCHO poll payload is not read as NPI",
+      chockey._parse_npi({"title": "USCHO.com", "data": [
+          {"RANK": "1", "TEAM (1ST VOTES)": "Denver (33)"}]}), {})
+check("an NPI payload is read",
+      chockey._parse_npi({"title": "NPI", "data": [
+          {"Rank": "2", "School": "Michigan St."}]}), {"michigan state": 2})
 
 print("\nodds sources  [LIVE]")
 nfl = odds.for_league("nfl")

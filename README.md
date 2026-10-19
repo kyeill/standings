@@ -11,7 +11,7 @@ python site.py --all     same, but keep every sport, for testing
 python build.py          print what each tab resolved to, no HTML
 python mock.py           the three original design mockups
 python logos.py --write  re-measure which crest variant reads (rarely)
-python selftest.py       check the back end (168 assertions)
+python selftest.py       check the back end (172 assertions)
 python rankings_proof.py prove the History rankings against the old sheet
 python import_sheet.py   ONE-TIME import from the rankings sheet (needs openpyxl)
 ```
@@ -365,8 +365,11 @@ Two traps worth remembering, both cost time here:
 
 * College hockey conference POINTS are not derived, only W-L-T -- the leagues
   weight overtime differently and change the rules between seasons.
-* The NPI rank comes from a community mirror of ncaa.com, not a first-party
-  feed. If it goes away the hockey tables just lose their rank column.
+* The NPI rank comes from a community mirror of ncaa.com
+  (`ncaa-api.henrygd.me/rankings/icehockey-men/d1/npi`), not a first-party
+  feed. If it goes away, or serves something other than NPI at that address
+  (the bare `/d1` path switched to the USCHO poll in October 2026), the hockey
+  tables just lose their rank column.
 * College basketball and soccer have no odds source at all.
 * The Pistons' teal and the Cavaliers' gold are hand-picked: ESPN has no teal
   for the Pistons at all, and returns a muted antique gold for the Cavaliers.

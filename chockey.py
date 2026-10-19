@@ -60,7 +60,11 @@ TOURNAMENT = re.compile(r"quarterfinal|semifinal|final|championship|"
 LIVE_CACHE = 60 * 3
 
 
-NPI = "https://ncaa-api.henrygd.me/rankings/icehockey-men/d1"
+# The rankings path WITHOUT a poll name used to serve NPI; by October 2026 it
+# served the USCHO.com media poll instead -- about twenty teams, "RANK" and
+# "TEAM (1ST VOTES)" in place of "Rank" and "School" -- and every team quietly
+# lost its rank. Name the poll, and check the payload says it is NPI.
+NPI = "https://ncaa-api.henrygd.me/rankings/icehockey-men/d1/npi"
 
 # The NCAA writes school names its own way ("Michigan St.", "Alas. Fairbanks").
 # Expanding the common abbreviations gets 55 of 63 teams; the rest need saying
@@ -114,7 +118,18 @@ def npi_ranks():
     Served by a community mirror of ncaa.com rather than a first-party feed --
     if it disappears the tables simply lose their rank column.
     """
-    data = fetch.get(NPI, key="npi-icehockey", max_age_min=60 * 12)
+    data = fetch.get(NPI, key="npi-icehockey-npi", max_age_min=60 * 12)
+    return _parse_npi(data)
+
+
+def _parse_npi(data):
+    """The rank table out of a mirror payload -- {} for anything not NPI.
+
+    A poll, or any other table the mirror decides to serve at this address,
+    must not be read as NPI just because it has a rank column.
+    """
+    if (data or {}).get("title") != "NPI":
+        return {}
     out = {}
     for row in (data or {}).get("data") or []:
         try:
