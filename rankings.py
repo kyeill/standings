@@ -264,17 +264,6 @@ def _round_half_up(x):
     return math.floor(x + 0.5)
 
 
-def place_block(tab, cols, pts):
-    """Best four finishes of the five, each scored from Place->Pts; /4.
-    SMALL skips blanks and text; a missing k-th finish scores 0 (IFERROR)."""
-    finishes = sorted(_nums(cols))[:4]
-    return sum(pts.get(f, 0) for f in finishes) / 4
-
-
-def points_block(cols):
-    return sum(sorted(_nums(cols), reverse=True)[:4]) / 4
-
-
 def rating_block(cols, missing):
     """(SUM - MAX + blanks*N) / 4 -- the worst of five dropped, a season with
     no rating at all scored as `missing` (N, the field size)."""

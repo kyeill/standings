@@ -318,6 +318,12 @@ def main():
                 "; UNMATCHED %s" % unmatched if unmatched else ""))
             for d in diffs:
                 print("    " + d)
+        label, diffs = check_b1g_baseball()
+        print("NCAAB_B1G %s: %d differences" % (label, len(diffs)))
+        for d in diffs:
+            print("    " + d)
+        import fill_tournaments
+        fill_tournaments.main()
         return
     today = datetime.date.today()
     for sport in PRO:
@@ -356,7 +362,7 @@ def b1g_baseball(year):
     firsts = [n for n, p in out.items() if p == 1]
     if len(firsts) == 1:
         out["Outright Champion"] = firsts[0]
-    # The conference tournament's final, found on the days around it.
+    # The conference tournament's final, played in the last full week of May.
     for day in range(18, 32):
         data = fetch.get(SITE % "baseball/college-baseball" + "/scoreboard",
                          {"dates": "%d05%02d" % (year, day), "groups": B1G_BASEBALL,
@@ -365,14 +371,14 @@ def b1g_baseball(year):
         for event in (data or {}).get("events") or []:
             comp = (event.get("competitions") or [{}])[0]
             note = " ".join(n.get("headline") or "" for n in comp.get("notes") or [])
-            if "Big Ten Tournament - Championship" in note:
-                for side in comp.get("competitors") or []:
-                    if side.get("winner"):
-                        team = side.get("team") or {}
-                        byid = {t["id"]: out and names.get(t["id"], t["location"])
-                                for t in conf}
-                        out["B1G Tournament"] = byid.get(team.get("id"),
-                                                         team.get("location"))
+            if "Big Ten Tournament - Championship" not in note:
+                continue
+            for side in comp.get("competitors") or []:
+                if side.get("winner"):
+                    tid = str((side.get("team") or {}).get("id"))
+                    byid = {t["id"]: t["location"] for t in conf}
+                    out["B1G Tournament"] = names.get(tid, byid.get(tid))
+                    return out
     return out
 
 

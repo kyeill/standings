@@ -6,7 +6,6 @@ what ESPN does and does not publish, measured on **2026-08-25**, so it does not
 have to be rediscovered.
 
 ```
-python mock.py     -> output/mockups.html   three designs, real data
 python model.py    -> a one-line summary per tracked team, for sanity checks
 ```
 
@@ -358,3 +357,16 @@ ESPN listed only `ap`, `usa`, `fcs` and `afca`, so "cfp" is unconfirmed. When
 the committee's first ranking is out (early November), check the rankings
 payload's `type` values; if it is not "cfp", the table silently keeps
 reading the AP poll.
+
+## ESPN's BPI drops the projected seed out of season (2026-10-29)
+
+The CBB tab's **Seed** column comes from `projectedtournamentseed` in the
+power index. In late October that field is simply absent -- the payload
+carries `bpirank`, `chancewinconfortie` and the projected records, nothing
+seed-shaped -- so the column is legitimately empty until the season is under
+way. A selftest that asserted "the Seed column has values" therefore started
+failing on its own. It now checks the plumbing against a payload of our own
+and leaves the live assertion to CFB and HKY, whose numbers publish all year.
+
+Same rule as the rest of this file: **assert what the code does with a
+payload, not what ESPN happens to be serving today.**

@@ -9,7 +9,6 @@ list and what each sport's data can actually support.
 python site.py           build into output/site/  (in-season sports only)
 python site.py --all     same, but keep every sport, for testing
 python build.py          print what each tab resolved to, no HTML
-python mock.py           the three original design mockups
 python logos.py --write  re-measure which crest variant reads (rarely)
 python selftest.py       check the back end (172 assertions)
 python rankings_proof.py prove the History rankings against the old sheet

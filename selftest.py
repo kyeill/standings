@@ -282,8 +282,27 @@ for key, label in (("cfb", "CFP"), ("cbb", "Seed"), ("hky", "NPI")):
     built = build.table(tab["groups"][0], datetime.date.today())
     check("%s carries a %s column" % (key.upper(), label),
           built["column"]["label"], label)
+# CFB and HKY publish their number all year. College basketball's does NOT:
+# ESPN drops projectedtournamentseed from the BPI out of season (checked
+# 2026-10-29, when the payload had bpirank and nothing seed-shaped), so an
+# empty Seed column in October is right, and asserting otherwise only rots.
+for key in ("cfb", "hky"):
+    tab = next(t for t in leagues.TABS if t["key"] == key)
+    built = build.table(tab["groups"][0], datetime.date.today())
     check("%s column has values" % key.upper(),
           sum(1 for r in built["rows"] if r["extra"] is not None) > 0, True)
+# The plumbing itself is checked against a payload of our own, so it holds
+# whatever ESPN is publishing today.
+_real_pi = fetch.power_index
+try:
+    fetch.power_index = lambda *a, **k: {
+        "Michigan Wolverines": {"projectedtournamentseed": 3}}
+    cbb_group = next(t for t in leagues.TABS if t["key"] == "cbb")["groups"][0]
+    spec, extra = build._extra_column(cbb_group, [])
+    check("the Seed column reads ESPN's field when it is there",
+          extra.get("Michigan Wolverines"), 3)
+finally:
+    fetch.power_index = _real_pi
 # The BPI ranks only 50 teams nationally, so most of a conference is
 # legitimately blank -- that must not be mistaken for a failure.
 cbb = build.table(next(t for t in leagues.TABS if t["key"] == "cbb")["groups"][0],
